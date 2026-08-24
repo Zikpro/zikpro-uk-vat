@@ -294,8 +294,36 @@ def resync_standard_ui_records():
 	frappe.db.commit()
 
 
+def ensure_vat_setup():
+	"""Out-of-the-box setup: if a default company exists, create its VAT Settings and
+	seed the VAT accounts + Item Tax Templates (Standard/Reduced/Zero/Exempt/Outside-scope
+	for sales and purchases) with their treatments, so a fresh install has a working VAT
+	cockpit immediately instead of an empty one. Idempotent; skips silently when no company
+	exists yet (a bare ERPNext before the setup wizard) — the cockpit's one-click still works."""
+	company = frappe.db.get_single_value("Global Defaults", "default_company")
+	if not company:
+		return
+	try:
+		if not frappe.db.exists("VAT Settings", {"company": company}):
+			admin_email = frappe.db.get_value("User", "Administrator", "email") or "admin@example.com"
+			frappe.get_doc({
+				"doctype": "VAT Settings",
+				"company": company,
+				"billing_contact": admin_email,
+				"vat_accounting_scheme": "Standard (Accrual)",
+			}).insert(ignore_permissions=True)
+			frappe.db.commit()
+		# reuse the cockpit's idempotent seeders (accounts, then templates + treatments)
+		from zikpro_uk_vat import cockpit
+		cockpit.setup_vat_defaults()
+	except Exception:
+		# best-effort — never fail the install; the user can run the cockpit one-click.
+		frappe.log_error(frappe.get_traceback(), "zikpro_uk_vat: ensure_vat_setup")
+
+
 def after_install():
 	ensure_custom_fields()
 	enforce_uk_timezone()
 	ensure_vat_roles_and_perms()
 	resync_standard_ui_records()
+	ensure_vat_setup()

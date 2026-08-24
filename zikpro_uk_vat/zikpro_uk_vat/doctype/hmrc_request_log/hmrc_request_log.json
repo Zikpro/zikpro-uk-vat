@@ -1,0 +1,153 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-08-01 12:00:00.000000",
+ "description": "Masked audit trail of every call to HMRC. Never stores tokens; fraud-prevention headers are recorded by NAME only.",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "request_time",
+  "method",
+  "outcome",
+  "http_status",
+  "column_break_top",
+  "vrn",
+  "company",
+  "duration_ms",
+  "endpoint_section",
+  "endpoint",
+  "correlation_id",
+  "receipt_id",
+  "detail_section",
+  "fph_headers",
+  "error_summary"
+ ],
+ "fields": [
+  {
+   "fieldname": "request_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Request Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "method",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Method"
+  },
+  {
+   "default": "Success",
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Outcome",
+   "options": "Success\nError"
+  },
+  {
+   "fieldname": "http_status",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "HTTP Status"
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vrn",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "VRN"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "duration_ms",
+   "fieldtype": "Int",
+   "label": "Duration (ms)"
+  },
+  {
+   "fieldname": "endpoint_section",
+   "fieldtype": "Section Break",
+   "label": "Endpoint"
+  },
+  {
+   "fieldname": "endpoint",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Endpoint",
+   "length": 500
+  },
+  {
+   "fieldname": "correlation_id",
+   "fieldtype": "Data",
+   "label": "HMRC Correlation ID"
+  },
+  {
+   "fieldname": "receipt_id",
+   "fieldtype": "Data",
+   "label": "Receipt ID"
+  },
+  {
+   "fieldname": "detail_section",
+   "fieldtype": "Section Break",
+   "label": "Detail"
+  },
+  {
+   "description": "The Gov-Client / Gov-Vendor fraud-prevention headers sent, by NAME only (never values).",
+   "fieldname": "fph_headers",
+   "fieldtype": "Small Text",
+   "label": "Fraud-Prevention Headers Sent"
+  },
+  {
+   "fieldname": "error_summary",
+   "fieldtype": "Small Text",
+   "label": "Error Summary"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-08-01 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "HMRC Request Log",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Preparer"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Approver"
+  }
+ ],
+ "sort_field": "request_time",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

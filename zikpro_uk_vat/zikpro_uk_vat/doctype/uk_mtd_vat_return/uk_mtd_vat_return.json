@@ -1,0 +1,330 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2025-02-16 21:56:17.339860",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "vat_obligations_section",
+  "vrn",
+  "company",
+  "period_start_date",
+  "due_date",
+  "reference_key",
+  "accounting_scheme",
+  "column_break_glcs",
+  "status",
+  "period_end_date",
+  "received_date",
+  "vat_return_section",
+  "sales_vat_due_box1",
+  "eu_acquisition_vat_due_box2",
+  "total_vat_due_box3",
+  "purchase_vat_reclaimed_box4",
+  "net_vat_due_box5",
+  "column_break_xryw",
+  "net_sales_box6",
+  "net_purchases_box7",
+  "net_eu_supplies_box_8",
+  "net_eu_acquisitions_box_9",
+  "receipt_section",
+  "form_bundle_number",
+  "processing_date",
+  "charge_ref_number",
+  "payment_indicator",
+  "submitted_on",
+  "receipt_id",
+  "receipt_timestamp",
+  "correlation_id",
+  "submitted_payload",
+  "vat_account_snapshot_section",
+  "vat_rate_summary",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "vat_obligations_section",
+   "fieldtype": "Section Break",
+   "label": "VAT Obligations"
+  },
+  {
+   "fieldname": "vrn",
+   "fieldtype": "Data",
+   "label": "VRN",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Overdue\nFulfilled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "period_start_date",
+   "fieldtype": "Date",
+   "label": "Period Start Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_key",
+   "fieldtype": "Data",
+   "label": "Reference Key",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_glcs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "period_end_date",
+   "fieldtype": "Date",
+   "label": "Period End Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "received_date",
+   "fieldtype": "Date",
+   "label": "Received Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_return_section",
+   "fieldtype": "Section Break",
+   "label": "VAT Return"
+  },
+  {
+   "fieldname": "sales_vat_due_box1",
+   "fieldtype": "Currency",
+   "label": "Box 1 \u2014 VAT due on sales and other outputs",
+   "read_only": 1,
+   "options": "GBP"
+  },
+  {
+   "fieldname": "eu_acquisition_vat_due_box2",
+   "fieldtype": "Currency",
+   "label": "Box 2 \u2014 VAT due on acquisitions of goods made in Northern Ireland from EU Member States",
+   "read_only": 1,
+   "options": "GBP",
+   "description": "Northern Ireland only (NI Protocol, from 1 Jan 2021)."
+  },
+  {
+   "fieldname": "total_vat_due_box3",
+   "fieldtype": "Currency",
+   "label": "Box 3 \u2014 Total VAT due (Box 1 + Box 2)",
+   "read_only": 1,
+   "options": "GBP"
+  },
+  {
+   "fieldname": "purchase_vat_reclaimed_box4",
+   "fieldtype": "Currency",
+   "label": "Box 4 \u2014 VAT reclaimed on purchases and other inputs",
+   "read_only": 1,
+   "options": "GBP"
+  },
+  {
+   "fieldname": "net_vat_due_box5",
+   "fieldtype": "Currency",
+   "label": "Box 5 \u2014 Net VAT to pay to HMRC or reclaim",
+   "read_only": 1,
+   "options": "GBP"
+  },
+  {
+   "fieldname": "column_break_xryw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "net_sales_box6",
+   "fieldtype": "Currency",
+   "label": "Box 6 \u2014 Total value of sales and all other outputs excluding VAT",
+   "read_only": 1,
+   "options": "GBP"
+  },
+  {
+   "fieldname": "net_purchases_box7",
+   "fieldtype": "Currency",
+   "label": "Box 7 \u2014 Total value of purchases and all other inputs excluding VAT",
+   "read_only": 1,
+   "options": "GBP"
+  },
+  {
+   "fieldname": "net_eu_supplies_box_8",
+   "fieldtype": "Currency",
+   "label": "Box 8 \u2014 Total value of dispatches of goods from Northern Ireland to EU Member States, excluding VAT",
+   "read_only": 1,
+   "options": "GBP",
+   "description": "Northern Ireland only (NI Protocol, from 1 Jan 2021)."
+  },
+  {
+   "fieldname": "net_eu_acquisitions_box_9",
+   "fieldtype": "Currency",
+   "label": "Box 9 \u2014 Total value of acquisitions of goods made in Northern Ireland from EU Member States, excluding VAT",
+   "read_only": 1,
+   "options": "GBP",
+   "description": "Northern Ireland only (NI Protocol, from 1 Jan 2021)."
+  },
+  {
+   "fieldname": "obligation_frequency",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Obligation Frequency",
+   "options": "Monthly\nQuarterly\nAll",
+   "default": "All",
+   "insert_after": "vat_obligations_section"
+  },
+  {
+   "fieldname": "fetch_obligations_btn",
+   "fieldtype": "Button",
+   "hidden": 1,
+   "label": "Fetch Obligations",
+   "depends_on": "eval:doc.docstatus==0",
+   "insert_after": "obligation_frequency"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "VAT-RET-.YYYY.-",
+   "default": "VAT-RET-.YYYY.-",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accounting_scheme",
+   "fieldtype": "Data",
+   "label": "VAT Accounting Scheme",
+   "read_only": 1,
+   "description": "Scheme the figures were computed under (Standard/Cash)."
+  },
+  {
+   "fieldname": "receipt_section",
+   "fieldtype": "Section Break",
+   "label": "HMRC Receipt"
+  },
+  {
+   "fieldname": "form_bundle_number",
+   "fieldtype": "Data",
+   "label": "Form Bundle Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "processing_date",
+   "fieldtype": "Datetime",
+   "label": "Processing Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "charge_ref_number",
+   "fieldtype": "Data",
+   "label": "Charge Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_indicator",
+   "fieldtype": "Data",
+   "label": "Payment Indicator",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Datetime",
+   "label": "Submitted To HMRC On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "UK MTD VAT Return",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  },
+  {
+   "fieldname": "receipt_id",
+   "fieldtype": "Data",
+   "label": "HMRC Receipt ID",
+   "read_only": 1,
+   "description": "Non-repudiation receipt (Receipt-ID response header) \u2014 legal proof of submission."
+  },
+  {
+   "fieldname": "receipt_timestamp",
+   "fieldtype": "Datetime",
+   "label": "Receipt Timestamp",
+   "read_only": 1
+  },
+  {
+   "fieldname": "correlation_id",
+   "fieldtype": "Data",
+   "label": "HMRC Correlation ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_payload",
+   "fieldtype": "Code",
+   "options": "JSON",
+   "label": "Submitted Payload (HMRC)",
+   "read_only": 1,
+   "description": "Immutable snapshot of the exact 9-box body sent to HMRC \u2014 recorded at filing, frozen on submit."
+  },
+  {
+   "fieldname": "vat_account_snapshot_section",
+   "fieldtype": "Section Break",
+   "label": "VAT Account Snapshot (as filed)",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "vat_rate_summary",
+   "fieldtype": "Table",
+   "label": "VAT Rate Summary",
+   "options": "VAT Return Rate Summary",
+   "read_only": 1,
+   "description": "Frozen at filing \u2014 the Notice 700/22 VAT account (net by treatment) as submitted."
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-24 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "UK MTD VAT Return",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 0,
+   "amend": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "is_submittable": 1,
+ "autoname": "naming_series:",
+ "naming_rule": "By \"Naming Series\" field",
+ "track_changes": 1
+}

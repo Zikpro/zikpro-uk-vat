@@ -1,0 +1,175 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-07-25 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "posting_date",
+  "column_break_top",
+  "adjustment_type",
+  "vat_box",
+  "amount",
+  "detail_section",
+  "reason",
+  "notice_ref",
+  "column_break_detail",
+  "origin_doctype",
+  "origin_name",
+  "origin_period",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "VADJ-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "VADJ-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "description": "The date this adjustment lands in — determines which VAT return period it affects.",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adjustment_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Adjustment Type",
+   "options": "Error Correction (Notice 700/45)\nPartial Exemption\nBad Debt Relief\nCapital Goods Scheme\nFuel Scale Charge\nScheme Change (Notice 731)\nOther",
+   "reqd": 1
+  },
+  {
+   "description": "Which of the 9 boxes this adjustment changes (VAT boxes 1/2/4 or net boxes 6/7/8/9 — the derived boxes 3/5 recompute automatically).",
+   "fieldname": "vat_box",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "VAT Box",
+   "options": "Box 1\nBox 2\nBox 4\nBox 6\nBox 7\nBox 8\nBox 9",
+   "reqd": 1
+  },
+  {
+   "description": "Signed amount to add to the box (negative to reduce).",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "options": "Company:company:default_currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "detail_section",
+   "fieldtype": "Section Break",
+   "label": "Detail & Provenance"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "description": "e.g. VAT Notice 706 (partial exemption), 700/45 (corrections), 700/18 (bad debt).",
+   "fieldname": "notice_ref",
+   "fieldtype": "Data",
+   "label": "Notice Reference"
+  },
+  {
+   "fieldname": "column_break_detail",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The record this adjustment relates to (invoice, asset, error) — for the double-count guard.",
+   "fieldname": "origin_doctype",
+   "fieldtype": "Link",
+   "label": "Origin DocType",
+   "options": "DocType"
+  },
+  {
+   "description": "Soft provenance reference (not a hard link, so the origin can still be amended) — the double-count guard flags if this document is later amended or cancelled.",
+   "fieldname": "origin_name",
+   "fieldtype": "Data",
+   "label": "Origin Name"
+  },
+  {
+   "description": "The VAT period the adjustment ORIGINATES from (may differ from the landing period, e.g. an error corrected in a later return).",
+   "fieldname": "origin_period",
+   "fieldtype": "Data",
+   "label": "Origin Period"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "VAT Adjustment",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-25 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "VAT Adjustment",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Preparer",
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Approver",
+   "submit": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

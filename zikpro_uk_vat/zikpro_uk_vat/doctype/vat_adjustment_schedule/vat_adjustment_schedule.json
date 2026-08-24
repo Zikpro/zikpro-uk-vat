@@ -1,0 +1,233 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-07-25 15:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "schedule_type",
+  "company",
+  "status",
+  "column_break_top",
+  "reference_doctype",
+  "reference_name",
+  "trigger_date",
+  "trigger_section",
+  "vat_box",
+  "amount",
+  "column_break_trig",
+  "reason",
+  "notice_ref",
+  "cgs_total_input_vat",
+  "cgs_intervals",
+  "cgs_interval_number",
+  "cgs_baseline_use_pct",
+  "cgs_interval_use_pct",
+  "result_section",
+  "generated_adjustment",
+  "generated_on",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "VADJSCH-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "VADJSCH-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "Bad Debt Relief",
+   "description": "The kind of forward-scheduled VAT adjustment.",
+   "fieldname": "schedule_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Schedule Type",
+   "options": "Bad Debt Relief\nCapital Goods Scheme\nPartial Exemption Annual",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nClaimed\nNot Eligible\nReversed\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_top",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The record this schedule tracks (e.g. the unpaid Sales Invoice for bad-debt relief, or the asset for CGS).",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "description": "The date the adjustment becomes claimable (e.g. invoice due date + 6 months for bad-debt relief). Generation runs on/after this date.",
+   "fieldname": "trigger_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Trigger Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "trigger_section",
+   "fieldtype": "Section Break",
+   "label": "Adjustment to generate"
+  },
+  {
+   "fieldname": "vat_box",
+   "fieldtype": "Select",
+   "label": "VAT Box",
+   "options": "Box 1\nBox 2\nBox 4\nBox 6\nBox 7\nBox 8\nBox 9",
+   "reqd": 1
+  },
+  {
+   "description": "Signed amount the generated adjustment will apply to the box.",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "options": "Company:company:default_currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_trig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notice_ref",
+   "fieldtype": "Data",
+   "label": "Notice Reference"
+  },
+  {
+   "fieldname": "cgs_total_input_vat",
+   "fieldtype": "Currency",
+   "label": "CGS: total input VAT on the asset",
+   "depends_on": "eval:doc.schedule_type=='Capital Goods Scheme'"
+  },
+  {
+   "fieldname": "cgs_intervals",
+   "fieldtype": "Int",
+   "label": "CGS: intervals (5 or 10)",
+   "depends_on": "eval:doc.schedule_type=='Capital Goods Scheme'"
+  },
+  {
+   "fieldname": "cgs_interval_number",
+   "fieldtype": "Int",
+   "label": "CGS: interval number",
+   "depends_on": "eval:doc.schedule_type=='Capital Goods Scheme'"
+  },
+  {
+   "fieldname": "cgs_baseline_use_pct",
+   "fieldtype": "Percent",
+   "label": "CGS: baseline taxable-use %",
+   "depends_on": "eval:doc.schedule_type=='Capital Goods Scheme'"
+  },
+  {
+   "fieldname": "cgs_interval_use_pct",
+   "fieldtype": "Percent",
+   "label": "CGS: this interval's taxable-use %",
+   "depends_on": "eval:doc.schedule_type=='Capital Goods Scheme'"
+  },
+  {
+   "fieldname": "result_section",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "generated_adjustment",
+   "fieldtype": "Link",
+   "label": "Generated Adjustment",
+   "options": "VAT Adjustment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "generated_on",
+   "fieldtype": "Date",
+   "label": "Generated On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "VAT Adjustment Schedule",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-08-22 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "VAT Adjustment Schedule",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Preparer",
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Approver",
+   "submit": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

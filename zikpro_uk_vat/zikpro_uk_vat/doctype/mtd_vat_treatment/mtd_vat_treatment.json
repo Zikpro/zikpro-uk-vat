@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-19 17:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_tax_template",
+  "vat_treatment",
+  "in_box_6_7"
+ ],
+ "fields": [
+  {
+   "columns": 5,
+   "fieldname": "item_tax_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Tax Template",
+   "options": "Item Tax Template",
+   "reqd": 1
+  },
+  {
+   "columns": 4,
+   "description": "Zero-rated, Exempt and Outside-scope all carry 0% VAT, so only this classification can tell them apart.",
+   "fieldname": "vat_treatment",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "VAT Treatment",
+   "options": "Standard rated\nReduced rated\nZero rated\nExempt\nOutside scope\nReverse charge (sale)\nReverse charge (purchase)",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "default": "1",
+   "description": "Box 6/7 include zero-rated and exempt supplies but EXCLUDE outside-scope items.",
+   "fieldname": "in_box_6_7",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "In Box 6/7"
+  },
+  {
+   "depends_on": "eval:doc.vat_treatment && doc.vat_treatment.indexOf('Reverse charge') === 0",
+   "description": "Reverse charge only (Notice 735): the notional VAT rate the customer self-accounts. The classification Item Tax Template itself must be 0% (the invoice carries no actual VAT).",
+   "fieldname": "notional_rate",
+   "fieldtype": "Percent",
+   "label": "Reverse-charge notional rate %"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-19 17:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "MTD VAT Treatment",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

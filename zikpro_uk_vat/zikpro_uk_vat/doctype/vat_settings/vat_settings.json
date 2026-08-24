@@ -1,0 +1,222 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-16 21:40:47.342132",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "details_tab",
+  "company",
+  "billing_contact",
+  "vat_accounting_scheme",
+  "scheme_effective_year",
+  "flat_rate_percentage",
+  "payment_method",
+  "column_break_ngqg",
+  "vat_return_report",
+  "oauth_tab",
+  "client_id",
+  "client_secret",
+  "redirect_url",
+  "column_break_vpqk",
+  "access_token",
+  "refresh_token",
+  "authorised_vrn",
+  "broker_section",
+  "use_broker",
+  "broker_signup_token",
+  "broker_url",
+  "broker_tenant_id",
+  "broker_shared_secret",
+  "vat_accounts_section",
+  "vat_accounts",
+  "vat_treatments"
+ ],
+ "fields": [
+  {
+   "fieldname": "details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "oauth_tab",
+   "fieldtype": "Tab Break",
+   "label": "OAuth"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "billing_contact",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Billing Contact",
+   "reqd": 1
+  },
+  {
+   "default": "Standard (Accrual)",
+   "description": "How VAT is accounted: Standard = by invoice date; Cash = by payment date; Flat Rate = a fixed % of gross turnover (Notice 733). Cannot be changed mid VAT-year.",
+   "fieldname": "vat_accounting_scheme",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "VAT Accounting Scheme",
+   "options": "Standard (Accrual)\nCash Accounting\nFlat Rate Scheme",
+   "reqd": 1
+  },
+  {
+   "description": "The VAT year the current scheme is locked to.",
+   "fieldname": "scheme_effective_year",
+   "fieldtype": "Data",
+   "label": "Scheme Effective Year",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.vat_accounting_scheme=='Flat Rate Scheme'",
+   "description": "Your HMRC flat-rate percentage for your sector (Notice 733). Include the 1% first-year discount while it applies; use 16.5% if you are a limited cost trader. Box 1 = this % of your VAT-inclusive turnover.",
+   "fieldname": "flat_rate_percentage",
+   "fieldtype": "Percent",
+   "label": "Flat Rate Percentage"
+  },
+  {
+   "description": "You will billed per submission",
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Payment Method",
+   "options": "Cash\nBank",
+   "reqd": 1
+  },
+  {
+   "fieldname": "vat_return_report",
+   "fieldtype": "Link",
+   "label": "VAT Return Report",
+   "options": "Report"
+  },
+  {
+   "fieldname": "column_break_ngqg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Client ID"
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "label": "Client Secret"
+  },
+  {
+   "fieldname": "redirect_url",
+   "fieldtype": "Data",
+   "label": "Redirect URL"
+  },
+  {
+   "fieldname": "column_break_vpqk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Password",
+   "label": "Access Token"
+  },
+  {
+   "fieldname": "refresh_token",
+   "fieldtype": "Password",
+   "label": "Refresh Token"
+  },
+  {
+   "description": "The VAT number this HMRC authorisation was granted for, recorded at Connect. If the Company's VAT number is later changed, HMRC rejects every call with CLIENT_OR_AGENT_NOT_AUTHORISED — comparing the two lets us say so plainly instead of showing a green \"Connected\".",
+   "fieldname": "authorised_vrn",
+   "fieldtype": "Data",
+   "label": "Authorised VAT Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "broker_section",
+   "fieldtype": "Section Break",
+   "label": "OAuth Broker (multi-tenant)"
+  },
+  {
+   "fieldname": "use_broker",
+   "fieldtype": "Check",
+   "label": "Connect via OAuth Broker",
+   "default": "0",
+   "description": "When set, OAuth (connect + refresh) routes through the central hmrc_broker instead of this site's own HMRC client. Removes the need to register this site's redirect URI with HMRC."
+  },
+  {
+   "fieldname": "broker_signup_token",
+   "fieldtype": "Password",
+   "label": "Broker Signup Token",
+   "description": "The sign-up token issued by ZikPro when you subscribe. Required to connect through the broker on first use — a bare install cannot connect without it."
+  },
+  {
+   "fieldname": "broker_url",
+   "fieldtype": "Data",
+   "label": "Broker URL",
+   "depends_on": "use_broker",
+   "description": "Base URL of the broker, e.g. https://oauth.zikpro.com"
+  },
+  {
+   "fieldname": "broker_tenant_id",
+   "fieldtype": "Data",
+   "label": "Broker Tenant ID",
+   "depends_on": "use_broker"
+  },
+  {
+   "fieldname": "broker_shared_secret",
+   "fieldtype": "Password",
+   "label": "Broker Shared Secret",
+   "depends_on": "use_broker"
+  },
+  {
+   "fieldname": "vat_accounts_section",
+   "fieldtype": "Section Break",
+   "label": "VAT Accounts"
+  },
+  {
+   "fieldname": "vat_accounts",
+   "fieldtype": "Table",
+   "label": "VAT Accounts",
+   "options": "MTD VAT Account",
+   "description": "Which ledger accounts hold VAT. Output = sales VAT (liability), Input = purchase VAT (asset). Used to compute Boxes 1 and 4 \u2014 without these the figures cannot be trusted."
+  },
+  {
+   "fieldname": "vat_treatments",
+   "fieldtype": "Table",
+   "label": "VAT Treatments",
+   "options": "MTD VAT Treatment",
+   "description": "Classify each Item Tax Template. Needed to tell zero-rated / exempt / outside-scope apart (all are 0% VAT) and to decide which amounts belong in Boxes 6/7."
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-22 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "VAT Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

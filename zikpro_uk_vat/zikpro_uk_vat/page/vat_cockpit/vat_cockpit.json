@@ -1,0 +1,9 @@
+{
+ "doctype": "Page",
+ "name": "vat-cockpit",
+ "page_name": "vat-cockpit",
+ "title": "UK VAT Cockpit",
+ "module": "Zikpro Uk Vat",
+ "standard": "Yes",
+ "system_page": 0
+}

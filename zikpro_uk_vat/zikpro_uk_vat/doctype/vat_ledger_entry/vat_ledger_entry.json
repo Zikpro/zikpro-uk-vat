@@ -1,0 +1,187 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-07-25 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "posting_date",
+  "company",
+  "event_type",
+  "basis",
+  "column_break_evt",
+  "vat_box",
+  "net_amount",
+  "vat_amount",
+  "source_section",
+  "source_doctype",
+  "source_name",
+  "column_break_src",
+  "tax_point_date",
+  "period_section",
+  "period_key",
+  "vat_return",
+  "column_break_prov",
+  "origin_period",
+  "origin_ref",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Event Type",
+   "options": "Accrued\nRealised\nFiled\nAdjusted\nBad Debt Relief\nRepaid",
+   "reqd": 1
+  },
+  {
+   "default": "Accrual",
+   "fieldname": "basis",
+   "fieldtype": "Select",
+   "label": "Basis",
+   "options": "Accrual\nCash"
+  },
+  {
+   "fieldname": "column_break_evt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vat_box",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "VAT Box",
+   "options": "\nBox 1\nBox 2\nBox 3\nBox 4\nBox 5\nBox 6\nBox 7\nBox 8\nBox 9"
+  },
+  {
+   "fieldname": "net_amount",
+   "fieldtype": "Currency",
+   "label": "Net Amount",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "vat_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "VAT Amount",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source DocType",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "source_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Source Name",
+   "options": "source_doctype"
+  },
+  {
+   "fieldname": "column_break_src",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tax_point_date",
+   "fieldtype": "Date",
+   "label": "Tax Point Date"
+  },
+  {
+   "fieldname": "period_section",
+   "fieldtype": "Section Break",
+   "label": "Period & Provenance"
+  },
+  {
+   "fieldname": "period_key",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Period Key"
+  },
+  {
+   "fieldname": "vat_return",
+   "fieldtype": "Link",
+   "label": "VAT Return",
+   "options": "UK MTD VAT Return"
+  },
+  {
+   "fieldname": "column_break_prov",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "origin_period",
+   "fieldtype": "Data",
+   "label": "Origin Period"
+  },
+  {
+   "fieldname": "origin_ref",
+   "fieldtype": "Data",
+   "label": "Origin Reference"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-07-25 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Zikpro Uk Vat",
+ "name": "VAT Ledger Entry",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Preparer"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "UK VAT Approver"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

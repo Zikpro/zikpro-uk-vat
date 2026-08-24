@@ -1,0 +1,22 @@
+{
+ "app": "zikpro_uk_vat",
+ "bg_color": "gray",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": null,
+ "icon_image": null,
+ "icon_type": "App",
+ "label": "UK VAT",
+ "link": "/app/vat-cockpit",
+ "link_to": null,
+ "link_type": "External",
+ "logo_url": "/assets/zikpro_uk_vat/uk_vat.svg",
+ "modified": "2026-07-19 02:34:57.407088",
+ "name": "UK VAT",
+ "parent_icon": null,
+ "restrict_removal": 0,
+ "roles": [],
+ "sidebar": null,
+ "standard": 1
+}

@@ -1,0 +1,131 @@
+name: UK VAT (base) — proof suite
+
+# Spins up a stable Frappe/ERPNext v15 bench on a fresh site, installs this app,
+# migrates, and runs the executable proof suite. Fails on any red check.
+# Bootstrap order is deliberate (see the sibling Pro repo's hard-won lessons):
+# fetch erpnext FIRST, then copy + pip-install THIS app, then register it in
+# sites/apps.txt on its own line — else the erpnext build can't import it, or
+# install-app refuses it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: proofs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proofs:
+    runs-on: ubuntu-22.04
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+          --health-start-period=30s
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Check out the app
+        uses: actions/checkout@v4
+        with:
+          path: apps/zikpro_uk_vat
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install system + bench deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            mariadb-client libmariadb-dev pkg-config build-essential \
+            python3-dev libssl-dev libffi-dev redis-server wkhtmltopdf
+          npm install -g yarn
+          pip install frappe-bench
+
+      - name: Wait for MariaDB + configure for Frappe
+        run: |
+          for i in $(seq 1 30); do
+            if mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" >/dev/null 2>&1; then
+              echo "MariaDB is up (attempt $i)"; break
+            fi
+            echo "waiting for MariaDB ($i)"; sleep 3
+          done
+          mysql -h 127.0.0.1 -u root -proot -e "
+            SET GLOBAL character_set_server = 'utf8mb4';
+            SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+            SET GLOBAL innodb_read_only_compressed = OFF;"
+
+      - name: Init bench (Frappe v15, stable)
+        run: |
+          cd ~
+          bench init --skip-redis-config-generation --frappe-branch version-15 frappe-bench
+
+      - name: Get app dependencies (ERPNext) + install this app
+        run: |
+          cd ~/frappe-bench
+          # Fetch erpnext FIRST (bench holds only frappe): get-app ends with
+          # `bench build --app erpnext`, which imports every app in apps/. Our app
+          # must NOT be there un-installed or that build dies.
+          bench get-app --branch version-15 erpnext
+          # Now add our app, pip-install it, and register it on its own line in
+          # sites/apps.txt (a manual cp doesn't; and apps.txt may lack a trailing newline).
+          cp -r $GITHUB_WORKSPACE/apps/zikpro_uk_vat apps/zikpro_uk_vat
+          bench pip install -e apps/zikpro_uk_vat
+          if [ -s sites/apps.txt ] && [ -n "$(tail -c1 sites/apps.txt)" ]; then echo >> sites/apps.txt; fi
+          grep -qxF zikpro_uk_vat sites/apps.txt || echo zikpro_uk_vat >> sites/apps.txt
+          bench setup requirements --python
+
+      - name: Point bench at CI services
+        run: |
+          cd ~/frappe-bench
+          bench set-config -g db_host 127.0.0.1
+          bench set-config -g redis_cache    "redis://127.0.0.1:6379"
+          bench set-config -g redis_queue    "redis://127.0.0.1:6379"
+          bench set-config -g redis_socketio "redis://127.0.0.1:6379"
+
+      - name: Create site
+        run: |
+          cd ~/frappe-bench
+          bench new-site test.localhost \
+            --mariadb-root-password root \
+            --admin-password admin \
+            --db-host 127.0.0.1 --no-mariadb-socket
+
+      - name: Install ERPNext
+        run: cd ~/frappe-bench && bench --site test.localhost install-app erpnext
+
+      - name: Install UK VAT (base)
+        run: cd ~/frappe-bench && bench --site test.localhost install-app zikpro_uk_vat
+
+      - name: Migrate
+        run: cd ~/frappe-bench && bench --site test.localhost migrate
+
+      - name: Run proof suite
+        run: cd ~/frappe-bench && bench --site test.localhost execute zikpro_uk_vat.tests.run_proofs.run
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          echo "===== bench logs ====="; tail -n 100 ~/frappe-bench/logs/*.log 2>/dev/null || true
+          echo "===== apps ====="; cat ~/frappe-bench/sites/apps.txt 2>/dev/null || true

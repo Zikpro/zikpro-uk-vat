@@ -281,9 +281,30 @@ def get_dashboard_data():
 
 @frappe.whitelist()
 def get_connection_status():
-	"""Richer connection detail for the Connect screen (read-only, truthful)."""
+	"""Richer connection detail for the Connect screen (read-only, truthful).
+
+	Broker-only build: the Connect panel branches on `broker_only`/`signup_token_set`/
+	`can_connect` (identical to get_dashboard_data). Without these the Vue template falls
+	back to the direct-mode branch and shows a "add client ID/secret" dead end — Settings
+	has no client-credential fields in a broker build. Keep this in lockstep with
+	get_dashboard_data().
+	"""
 	_require()
-	return _connection()
+	c = _connection()
+	signup_set = bool(c["settings"]) and bool(
+		frappe.db.get_value(VAT_SETTINGS, c["settings"], "broker_signup_token")
+	)
+	already_tenant = bool(c["settings"]) and bool(
+		frappe.db.get_value(VAT_SETTINGS, c["settings"], "broker_tenant_id")
+	)
+	# In a broker build there is no client_id, so _connection() reports "Not configured".
+	# That's a direct-mode label; for broker mode, readiness is a signup token / tenant.
+	if not c["connected"] and not c["vrn_mismatch"]:
+		c["state"] = "Not connected" if (signup_set or already_tenant) else "Not configured"
+	c["broker_only"] = True
+	c["signup_token_set"] = signup_set
+	c["can_connect"] = signup_set or already_tenant
+	return c
 
 
 ACCRUAL = "Standard (Accrual)"

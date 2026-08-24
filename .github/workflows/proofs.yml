@@ -121,6 +121,12 @@ jobs:
       - name: Migrate
         run: cd ~/frappe-bench && bench --site test.localhost migrate
 
+      # Seed the fixtures the ledger/scheme proofs need (company, fiscal year 2017-18,
+      # VAT accounts + treatments, GBP, customer + supplier). run_proofs does NOT seed
+      # these — without this step every data proof fails with "no company / no VAT accounts".
+      - name: Seed fixtures
+        run: cd ~/frappe-bench && bench --site test.localhost execute zikpro_uk_vat.tests.ci_bootstrap.ensure_fixtures
+
       - name: Run proof suite
         run: cd ~/frappe-bench && bench --site test.localhost execute zikpro_uk_vat.tests.run_proofs.run
 

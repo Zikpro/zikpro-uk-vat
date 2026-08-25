@@ -316,6 +316,9 @@ def get_connection_status():
 	c["broker_only"] = True
 	c["signup_token_set"] = signup_set
 	c["can_connect"] = signup_set or already_tenant
+	# The cockpit header badge reads conn.environment — without it the badge falls back to
+	# 'Sandbox' even on a production deployment. Keep in lockstep with get_dashboard_data.
+	c["environment"] = _hmrc_environment()
 	return c
 
 

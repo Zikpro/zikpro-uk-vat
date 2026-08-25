@@ -903,7 +903,7 @@ window.mount_vat_cockpit = function (el) {
 
 				<div class="vc-body" v-if="active === 'connect'">
 					<h3>Connect</h3>
-					<p class="text-muted">Authorise this app with HMRC (sandbox)</p>
+					<p class="text-muted">Authorise this app with HMRC ({{ (conn.environment || 'Sandbox').toLowerCase() }})</p>
 					<div v-if="connResult === 'success'" class="vc-note ok-note">✓ Connected to HMRC successfully.</div>
 					<div v-else-if="connResult === 'denied'" class="vc-note warn">Authorisation was declined at HMRC. You can try connecting again.</div>
 					<div v-else-if="connResult === 'error'" class="vc-note warn">The connection could not be completed. Please try again.</div>

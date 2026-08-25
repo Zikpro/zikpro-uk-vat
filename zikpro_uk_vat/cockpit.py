@@ -19,15 +19,30 @@ from requests.auth import HTTPBasicAuth
 HMRC_SANDBOX_BASE = "https://test-api.service.hmrc.gov.uk"
 HMRC_SANDBOX_AUTH_URL = f"{HMRC_SANDBOX_BASE}/oauth/authorize"
 HMRC_SANDBOX_TOKEN_URL = f"{HMRC_SANDBOX_BASE}/oauth/token"
-# Production HMRC base. The environment is a deployment switch (default: sandbox). Flip it with
-#   bench --site <site> set-config hmrc_production 1
+# Production HMRC base. Environment is a per-site switch AND a branch default (see
+# _hmrc_production): main defaults to production, develop to sandbox. Force either with:
+#   bench --site <site> set-config hmrc_sandbox 1      (force sandbox)
+#   bench --site <site> set-config hmrc_production 1   (force production)
 # In broker mode the broker's own sandbox_mode must match (the token is issued for that env).
 HMRC_PROD_BASE = "https://api.service.hmrc.gov.uk"
 
 
 def _hmrc_production():
-	"""True when this deployment files against LIVE HMRC (site config `hmrc_production`)."""
-	return bool(frappe.conf.get("hmrc_production"))
+	"""True when this deployment files against LIVE HMRC.
+
+	Branch default (BRANCH-DIVERGENT — the only intentional difference between develop and
+	main): on **develop** the default is the HMRC SANDBOX, so a staging/test deploy can never
+	accidentally file a real return; on **main** (marketplace/production) the default is
+	PRODUCTION. Either branch can override per-site: `hmrc_sandbox=1` forces sandbox and
+	`hmrc_production=1` forces production. Keep this line in sync-by-intent on promotion:
+	develop returns False, main returns True.
+	"""
+	conf = frappe.conf
+	if conf.get("hmrc_sandbox"):
+		return False
+	if conf.get("hmrc_production") is not None:
+		return bool(conf.get("hmrc_production"))
+	return True  # main default: PRODUCTION (develop default: False)
 
 
 def _hmrc_base():

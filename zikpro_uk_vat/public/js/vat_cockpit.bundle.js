@@ -1108,7 +1108,7 @@ window.mount_vat_cockpit = function (el) {
 						</tbody>
 					</table>
 									<div class="vc-section" style="margin-top:24px">
-						<div class="vc-section-head">Adjustment schedules <span class="text-muted">— bad-debt / capital-goods / partial-exemption, generated when due</span></div>
+						<div class="vc-section-head">Adjustment schedules <span class="text-muted">— <template v-if="proInstalled">bad-debt / capital-goods / partial-exemption, generated when due</template><template v-else>bad-debt schedules, generated when due (capital-goods &amp; partial-exemption schedules need UK VAT Pro)</template></span></div>
 						<div class="vc-actions" style="margin-bottom:10px">
 							<button class="vc-btn" :disabled="schedBusy" @click="loadSchedules">Refresh</button>
 							<button class="vc-btn primary" :disabled="schedBusy" @click="runSchedules">{{ schedBusy ? 'Working…' : 'Generate due adjustments' }}<span v-if="schedDue"> ({{ schedDue }} due)</span></button>
@@ -1454,7 +1454,7 @@ window.mount_vat_cockpit = function (el) {
 
 				<div class="vc-body" v-else-if="active === 'adjustments'">
 					<h3>Adjustments</h3>
-					<p class="text-muted">Year-end VAT adjustments — Partial Exemption (Notice 706) and the Capital Goods Scheme (Notice 706/2). Preview here, then post via a VAT Adjustment.</p>
+					<p class="text-muted"><template v-if="proInstalled">Year-end VAT adjustments — Partial Exemption (Notice 706) and the Capital Goods Scheme (Notice 706/2). Preview here, then post via a VAT Adjustment.</template><template v-else>Automatic year-end adjustments (Partial Exemption, Capital Goods Scheme) are part of UK VAT Pro. Basic supports manual adjustments on the Prepare Return screen.</template></p>
 					<div v-if="!proInstalled" class="vc-card">
 						<div class="vc-form-head">Year-end adjustment engines — UK VAT Pro</div>
 						<div class="vc-note">Automatic <b>Partial Exemption</b> annual adjustment (Notice 706) and <b>Capital Goods Scheme</b> interval calculations (Notice 706/2) are part of <b>UK VAT Pro</b>. Your Basic edition still supports <b>manual</b> adjustments on the Prepare Return screen — enter the figure yourself and it folds into the boxes. Upgrade at <b>zikpro.com</b> to compute them automatically.</div>

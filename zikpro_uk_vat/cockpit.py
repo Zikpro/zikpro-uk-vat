@@ -73,7 +73,7 @@ _OAUTH_STATE_PREFIX = "vat_oauth_state:"
 _LOG_DASHBOARD = "UK VAT Dashboard"
 # The product's central OAuth broker. A marketplace install with no HMRC client
 # credentials of its own self-registers here on first Connect and files through it.
-DEFAULT_BROKER_URL = "https://oauth.ziktax.com"
+DEFAULT_BROKER_URL = "https://zikops.frappe.cloud"
 _MSG_NOT_CONNECTED = "Not connected to HMRC."
 _MSG_NO_VRN = "No VAT registration number set on the Company."
 _MSG_NO_HMRC = "Could not reach HMRC. Please try again."

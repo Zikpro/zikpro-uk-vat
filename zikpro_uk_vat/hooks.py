@@ -1,7 +1,7 @@
 app_name = "zikpro_uk_vat"
-app_title = "Zikpro Uk Vat"
+app_title = "Zikpro UK VAT"
 app_publisher = "Zikpro"
-app_description = "Uk VAT Compliance"
+app_description = "UK VAT — file Making Tax Digital returns to HMRC (free base edition)"
 app_email = "info@zikpro.com"
 app_license = "mit"
 # required_apps = []

@@ -276,6 +276,8 @@ def get_dashboard_data():
 		"can_connect": signup_set or already_tenant,
 		# Sandbox vs Production — driven by the deployment switch (site config hmrc_production).
 		"environment": _hmrc_environment(),
+		# Gate premium UI (PE-annual / CGS engines) — Base shows an upsell, Pro shows the tools.
+		"pro_installed": _pro_installed(),
 	}
 
 
@@ -3055,6 +3057,14 @@ def _upsell(feature):
 	"""Standard 'needs Pro' response for a premium cockpit action in the free base edition."""
 	return {"ok": False, "pro_required": True,
 			"message": f"{feature} is available in UK VAT Pro — upgrade at zikpro.com."}
+
+
+def _pro_installed():
+	"""Whether the Pro add-on is present, so the cockpit can GATE premium UI (year-end
+	adjustment engines) behind an upsell instead of showing forms that only fail on use."""
+	import importlib.util
+
+	return importlib.util.find_spec("zikpro_uk_vat_pro") is not None
 
 
 def construction_reverse_charge_templates(side=None):

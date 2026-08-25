@@ -63,6 +63,7 @@ window.mount_vat_cockpit = function (el) {
 				adjForm: { adjustment_type: "Bad Debt Relief", vat_box: "Box 4", amount: null, reason: "", notice_ref: "" },
 				adjTypes: ["Error Correction (Notice 700/45)", "Partial Exemption", "Bad Debt Relief", "Capital Goods Scheme", "Fuel Scale Charge", "Other"],
 				adjBoxes: ["Box 1", "Box 2", "Box 4", "Box 6", "Box 7", "Box 8", "Box 9"],
+				proInstalled: false,
 				declared: false,
 				submitting: false,
 				submitResult: null,
@@ -222,6 +223,7 @@ window.mount_vat_cockpit = function (el) {
 					method: "zikpro_uk_vat.cockpit.get_dashboard_data",
 					callback: (r) => {
 						this.dash = r.message || {};
+						this.proInstalled = !!(r.message && r.message.pro_installed);
 						this.loading = false;
 						// get_period_status returns periods + liabilities + payments in one call;
 						// penalties is a separate HMRC resource (2nd call, still under 3 req/s).
@@ -1114,7 +1116,7 @@ window.mount_vat_cockpit = function (el) {
 						</div>
 						<div v-if="showSchedForm" class="vc-card" style="max-width:none; padding:14px 16px; margin-bottom:12px">
 							<div class="vc-filter">
-								<label>Type <select v-model="schedForm.schedule_type"><option v-for="t in schedTypes" :key="t">{{ t }}</option></select></label>
+								<label>Type <select v-model="schedForm.schedule_type"><option v-for="t in (proInstalled ? schedTypes : schedTypes.filter(x => x === 'Bad Debt Relief'))" :key="t">{{ t }}</option></select></label>
 								<label>Box <select v-model="schedForm.vat_box"><option v-for="b in adjBoxes" :key="b">{{ b }}</option></select></label>
 								<label>Trigger date <input type="date" v-model="schedForm.trigger_date" /></label>
 								<label>Amount <input type="number" step="0.01" v-model="schedForm.amount" placeholder="e.g. 200.00" /></label>
@@ -1453,6 +1455,11 @@ window.mount_vat_cockpit = function (el) {
 				<div class="vc-body" v-else-if="active === 'adjustments'">
 					<h3>Adjustments</h3>
 					<p class="text-muted">Year-end VAT adjustments — Partial Exemption (Notice 706) and the Capital Goods Scheme (Notice 706/2). Preview here, then post via a VAT Adjustment.</p>
+					<div v-if="!proInstalled" class="vc-card">
+						<div class="vc-form-head">Year-end adjustment engines — UK VAT Pro</div>
+						<div class="vc-note">Automatic <b>Partial Exemption</b> annual adjustment (Notice 706) and <b>Capital Goods Scheme</b> interval calculations (Notice 706/2) are part of <b>UK VAT Pro</b>. Your Basic edition still supports <b>manual</b> adjustments on the Prepare Return screen — enter the figure yourself and it folds into the boxes. Upgrade at <b>zikpro.com</b> to compute them automatically.</div>
+					</div>
+					<template v-if="proInstalled">
 					<div class="vc-card">
 						<div class="vc-form-head">Partial Exemption — annual adjustment</div>
 						<div class="vc-field"><label>VAT year from</label><input type="date" v-model="adjForm.pe_from" /></div>
@@ -1480,6 +1487,7 @@ window.mount_vat_cockpit = function (el) {
 							<div class="vc-hint">Positive = extra recovery; negative = claw-back. Post via a VAT Adjustment (Box 4) dated in this interval.</div>
 						</div>
 					</div>
+					</template>
 				</div>
 
 				<div class="vc-body" v-else-if="active === 'settings'">

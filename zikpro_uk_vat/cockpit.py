@@ -37,6 +37,16 @@ def _hmrc_base():
 	return HMRC_PROD_BASE if _hmrc_production() else HMRC_SANDBOX_BASE
 
 
+def _hmrc_authorize_url():
+	"""OAuth authorize endpoint — production or sandbox per the deployment switch."""
+	return f"{_hmrc_base()}/oauth/authorize"
+
+
+def _hmrc_token_url():
+	"""OAuth token endpoint — production or sandbox per the deployment switch."""
+	return f"{_hmrc_base()}/oauth/token"
+
+
 def _hmrc_environment():
 	return "Production" if _hmrc_production() else "Sandbox"
 
@@ -862,7 +872,7 @@ def get_authorize_url():
 		"redirect_uri": row["redirect_url"],
 		"state": state,
 	}
-	url = f"{HMRC_SANDBOX_AUTH_URL}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}"
+	url = f"{_hmrc_authorize_url()}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}"
 	return {"ok": True, "url": url}
 
 
@@ -905,7 +915,7 @@ def complete_oauth(code=None, state=None, broker_code=None, nonce=None):
 	}
 	try:
 		resp = requests.post(
-			HMRC_SANDBOX_TOKEN_URL,
+			_hmrc_token_url(),
 			data=payload,
 			headers={"Content-Type": "application/x-www-form-urlencoded"},
 			auth=HTTPBasicAuth(client_id, client_secret),
@@ -1017,7 +1027,7 @@ def _refresh_token(settings_name):
 		return False
 	try:
 		resp = requests.post(
-			HMRC_SANDBOX_TOKEN_URL,
+			_hmrc_token_url(),
 			data={
 				"grant_type": "refresh_token",
 				"refresh_token": refresh,
@@ -1556,7 +1566,7 @@ def _fph_app_token(settings_name):
 	if not (cid and csec):
 		return None
 	try:
-		tok = requests.post(HMRC_SANDBOX_TOKEN_URL, data={
+		tok = requests.post(_hmrc_token_url(), data={
 			"grant_type": "client_credentials", "client_id": cid, "client_secret": csec,
 			"scope": "read:vat write:vat"}, timeout=30)
 		return tok.json().get("access_token") if tok.status_code == 200 else None

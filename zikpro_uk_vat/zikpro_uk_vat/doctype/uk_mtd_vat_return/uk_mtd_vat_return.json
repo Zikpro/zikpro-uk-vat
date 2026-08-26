@@ -205,10 +205,11 @@
   },
   {
    "fieldname": "accounting_scheme",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "VAT Accounting Scheme",
    "read_only": 1,
-   "description": "Scheme the figures were computed under (Standard/Cash)."
+   "description": "Scheme the figures were computed under (Standard/Cash).",
+   "options": "Standard (Accrual)\nCash Accounting\nFlat Rate Scheme"
   },
   {
    "fieldname": "receipt_section",

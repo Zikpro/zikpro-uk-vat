@@ -177,9 +177,9 @@ def oauth_callback():
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     auth = HTTPBasicAuth(client_id, client_secret)
-    
-    response = requests.post(HMRC_TOKEN_URL, data=payload, headers=headers, auth=auth)
-    
+
+    response = requests.post(HMRC_TOKEN_URL, data=payload, headers=headers, auth=auth, timeout=30)
+
     if response.status_code != 200:
         frappe.throw(f"Token exchange failed: {response.status_code} - {response.text}")
     

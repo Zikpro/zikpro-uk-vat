@@ -967,6 +967,13 @@ window.mount_vat_cockpit = function (el) {
 				<div class="vc-body" v-else-if="active === 'dashboard'">
 					<h3>Dashboard</h3>
 					<p class="text-muted">Where you stand with HMRC</p>
+					<div v-if="!proInstalled && dash.pro_schedules_orphaned && dash.pro_schedules_orphaned.length" class="vc-note warn" style="margin-bottom:12px">
+						<b>{{ dash.pro_schedules_orphaned.length }} open Capital Goods / Partial Exemption schedule(s) need attention.</b>
+						These are year-end adjustment schedules whose future intervals are calculated by <b>UK VAT Pro</b>, which isn't installed. They won't auto-generate — re-subscribe to Pro, or post each due interval as a <b>manual adjustment</b> (Prepare Return) so nothing is missed:
+						<ul style="margin:6px 0 0 18px">
+							<li v-for="s in dash.pro_schedules_orphaned" :key="s.name">{{ s.schedule_type }} — due {{ s.trigger_date }}<span v-if="s.notice_ref"> ({{ s.notice_ref }})</span> · <span class="text-muted">{{ s.name }}</span></li>
+						</ul>
+					</div>
 					<div v-if="loading" class="text-muted">Loading…</div>
 					<div v-else>
 						<div class="vc-grid"><div><div class="vc-card">

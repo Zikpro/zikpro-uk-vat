@@ -303,7 +303,30 @@ def get_dashboard_data():
 		"environment": _hmrc_environment(),
 		# Gate premium UI (PE-annual / CGS engines) — Base shows an upsell, Pro shows the tools.
 		"pro_installed": _pro_installed(),
+		# If Pro was cancelled while multi-year CGS / Partial-Exemption-Annual schedules were
+		# still open, warn: their future intervals can't auto-compute without the Pro engine.
+		"pro_schedules_orphaned": _orphaned_pro_schedules(),
 	}
+
+
+def _orphaned_pro_schedules():
+	"""Pending CGS / Partial-Exemption-Annual schedules that need the Pro engine to compute
+	their due amounts. When Pro is absent (subscription stopped) these can't auto-generate —
+	surface them so the client re-subscribes or posts those intervals as manual adjustments
+	rather than silently missing them. Empty when Pro is installed. Bad-debt schedules are
+	free (base engine) and never orphaned."""
+	if _pro_installed():
+		return []
+	return frappe.get_all(
+		"VAT Adjustment Schedule",
+		filters={
+			"docstatus": 1,
+			"status": "Pending",
+			"schedule_type": ["in", ["Capital Goods Scheme", "Partial Exemption Annual"]],
+		},
+		fields=["name", "schedule_type", "trigger_date", "notice_ref"],
+		order_by="trigger_date asc",
+	)
 
 
 @frappe.whitelist()

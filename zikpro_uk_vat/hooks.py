@@ -4,7 +4,10 @@ app_publisher = "Zikpro"
 app_description = "UK VAT — file Making Tax Digital returns to HMRC (free base edition)"
 app_email = "info@zikpro.com"
 app_license = "mit"
-# required_apps = []
+# This app extends ERPNext (doc_events + custom fields + doctype_js on Sales/Purchase
+# Invoice, VAT item-tax-templates). Declare it so a bench deploy pulls/refuses without it —
+# else customer deploys fail with "required app not found" (flagged by Frappe marketplace).
+required_apps = ["frappe/erpnext"]
 
 app_version = "2.1.3"
 

@@ -79,7 +79,6 @@ override_whitelisted_methods = {
 # }
 
 after_migrate = [
-    "zikpro_uk_vat.utils.patch_login_manager",
     # Self-heal custom fields on every deploy. A one-shot patch cannot repair a
     # site once Patch Log marks it done — ziktax.frappe.cloud was missing
     # Company.uk_vat_registration_number and every cockpit load threw 1054.

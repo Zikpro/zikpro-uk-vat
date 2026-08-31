@@ -144,36 +144,6 @@ def update_mfa_timestamp(user):
         frappe.log_error("MFA Update Failed", msg)
         log_mfa_error(user, "MFA Update Failed", msg)
 
-def custom_post_login(login_manager,*args, **kwargs):
-    try:
-        # Call original method
-        from frappe.auth import LoginManager
-        LoginManager.original_post_login(login_manager,*args, **kwargs)
-
-        # Always update MFA timestamp after successful login
-        update_mfa_timestamp(login_manager.user)
-
-        frappe.log_error("DEBUG", f"✅ MFA timestamp updated for {login_manager.user}")
-
-    except Exception:
-        msg = f"Failed MFA update in post_login:\n{frappe.get_traceback()}"
-        frappe.log_error("MFA Post Login Error", msg)
-        log_mfa_error(login_manager.user, "MFA Post Login Error", msg)
-
-
-def patch_login_manager():
-    try:
-        from frappe.auth import LoginManager
-        if not hasattr(LoginManager, "original_post_login"):
-            LoginManager.original_post_login = LoginManager.post_login
-            LoginManager.post_login = custom_post_login
-            print("✅ Patched LoginManager.post_login")
-        else:
-            print("⚠️ LoginManager already patched")
-    except Exception:
-        print("❌ Error patching LoginManager:", frappe.get_traceback())
-
-
 # def patched_confirm_otp_token(login_manager):
 #     try:
 #         result = frappe.twofactor._original_confirm_otp_token(login_manager)

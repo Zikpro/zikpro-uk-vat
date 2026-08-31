@@ -101,7 +101,10 @@ def _grant(authorize_url, user_id, password):
 	"""
 	script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_oauth_grant.py")
 	python_bin = os.environ.get("HMRC_SMOKE_PYTHON") or sys.executable
-	out = subprocess.run(
+	# nosemgrep: frappe-subprocess-exec -- dev-only smoke harness (never shipped in a
+	# request path); argv is a static list, python_bin/script are code-controlled, and
+	# the three interpolated values are a sandbox authorize URL + HMRC test-user creds.
+	out = subprocess.run(  # noqa
 		[python_bin, script, authorize_url, user_id, password],
 		capture_output=True,
 		text=True,

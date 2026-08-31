@@ -895,8 +895,8 @@ def get_authorize_url():
 		return {
 			"ok": False,
 			"message": "Enter your ZikPro Broker Signup Token in VAT Settings, then click Connect. "
-					   "You receive this token when you subscribe — it links this site to HMRC "
-					   "through ZikPro's broker.",
+					   "It links this site to HMRC through ZikPro's broker. If you don't have a "
+					   "token yet, request a free one from info@zikpro.com.",
 		}
 
 	row = frappe.db.get_value(

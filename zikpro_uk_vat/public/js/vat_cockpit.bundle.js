@@ -952,7 +952,10 @@ window.mount_vat_cockpit = function (el) {
 						<div v-if="connMsg" class="vc-note warn">{{ connMsg }}</div>
 						<div v-else-if="conn.broker_only && !conn.can_connect" class="vc-note">
 							Add your <b>Broker signup token</b> in
-							<a href="#" @click.prevent="active = 'settings'">VAT Settings</a> (the token ZikPro sent you), then return here to connect.
+							<a href="#" @click.prevent="active = 'settings'">VAT Settings</a>, then return here to connect.
+							Don't have a token? Request a free one from
+							<a href="mailto:info@zikpro.com?subject=UK%20MTD%20VAT%20broker%20signup%20token">info@zikpro.com</a> —
+							it links this site to HMRC through ZikPro's broker.
 						</div>
 						<div v-else-if="!conn.broker_only && !conn.client_configured" class="vc-note">
 							Add your HMRC <b>client ID</b>, <b>client secret</b> and <b>redirect URL</b> in
@@ -994,6 +997,14 @@ window.mount_vat_cockpit = function (el) {
 							but the Company is now set to <b>{{ dash.vrn }}</b>. HMRC rejects every request
 							until the two match. Either correct the VAT number on the Company, or use
 							<b>Connect</b> to re-authorise for {{ dash.vrn }}.
+						</div>
+						<div v-else-if="dash.broker_only && !dash.signup_token_set" class="vc-note">
+							<b>One step before you can file.</b> This edition submits to HMRC securely through
+							ZikPro's Making Tax Digital broker, which needs a free <b>signup token</b> to link
+							this site. If you don't have one yet, request it from
+							<a href="mailto:info@zikpro.com?subject=UK%20MTD%20VAT%20broker%20signup%20token">info@zikpro.com</a>
+							— then paste it into <a href="#" @click.prevent="active = 'settings'">VAT Settings</a>
+							and click <b>Connect</b>. (Your invoices and returns already work; only submission needs the token.)
 						</div>
 						<div v-else-if="!dash.connected" class="vc-note">
 							Not connected to HMRC. Use <b>Connect</b> to authorise — then your obligations,
@@ -1627,7 +1638,7 @@ window.mount_vat_cockpit = function (el) {
 							<div v-if="setInfo.broker_only" class="vc-field">
 								<label>Broker signup token <span class="text-muted" v-if="setInfo.signup_token_set">(saved — leave blank to keep)</span></label>
 								<input type="password" v-model="setForm.broker_signup_token" placeholder="paste the token ZikPro sent you" autocomplete="new-password" />
-								<div class="vc-hint">Paste the signup token your ZikPro subscription email contained, click <b>Save settings</b>, then go to <b>Connect</b>. Required to link this site to HMRC through the broker.</div>
+								<div class="vc-hint">Paste your ZikPro signup token, click <b>Save settings</b>, then go to <b>Connect</b>. Required to link this site to HMRC through the broker. Don't have one? Request a free token from <a href="mailto:info@zikpro.com?subject=UK%20MTD%20VAT%20broker%20signup%20token">info@zikpro.com</a>.</div>
 							</div>
 						<div class="vc-field" v-if="!setInfo.broker_only">
 							<label>Client ID</label>

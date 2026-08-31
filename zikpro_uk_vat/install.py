@@ -269,6 +269,34 @@ def enforce_uk_timezone():
 		frappe.logger().info("UK VAT: set System Settings.time_zone = Europe/London")
 
 
+def ensure_locale_defaults():
+	"""Guarantee System Settings has a language + number_format so invoices can post.
+
+	Frappe core's get_locale_value() (frappe/locale.py) does `if lang: value = ...;
+	return value or ...` — when System Settings.language is EMPTY, `frappe.local.lang`
+	is falsy, `value` is never bound, and the function raises
+	`UnboundLocalError: local variable 'value'` the moment ERPNext calculates taxes
+	(calculate_item_values -> get_number_format). The result: submitting ANY Sales/
+	Purchase Invoice throws, so no VAT is ever posted to the ledger. A normal ERPNext
+	install runs the setup wizard, which fills these in — but a site provisioned
+	WITHOUT the wizard (bare `bench new-site`, some cloud/CI provisioning, partial
+	restores) has them blank and hits the crash on the very first invoice. We only
+	fill blanks (never override an admin's choice). Idempotent; must never abort migrate.
+	"""
+	try:
+		defaults = {"language": "en", "number_format": "#,###.##", "float_precision": "2"}
+		changed = False
+		for key, val in defaults.items():
+			if not frappe.db.get_single_value("System Settings", key):
+				frappe.db.set_single_value("System Settings", key, val)
+				changed = True
+		if changed:
+			frappe.db.commit()
+			frappe.logger().info("UK VAT: seeded blank System Settings locale defaults")
+	except Exception:
+		frappe.log_error("UK VAT: ensure_locale_defaults failed", "uk_vat_locale")
+
+
 # Standard UI records (module reports + the public workspace) that MUST match the
 # on-disk definition. Frappe's import_file skips re-importing a standard record when
 # the DB copy's `modified` is not older than the file's — so once these diverge in a

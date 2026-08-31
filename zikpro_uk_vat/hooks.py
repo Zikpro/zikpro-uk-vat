@@ -86,6 +86,10 @@ after_migrate = [
     # B37: pin the timezone on every deploy too — a fresh cloud site inherits
     # Frappe's Asia/Kolkata default and mis-dates transactions across VAT periods.
     "zikpro_uk_vat.install.enforce_uk_timezone",
+    # Fill blank System Settings language/number_format so ERPNext tax calc doesn't
+    # crash (UnboundLocalError in frappe core's get_locale_value) on the first invoice
+    # — bites sites provisioned without the setup wizard. Only fills blanks.
+    "zikpro_uk_vat.install.ensure_locale_defaults",
     # SEC-11: self-heal the preparer/approver roles + DocPerms on every deploy
     # (fresh installs skip seed patches, and cloud migrate skips DocPerm JSON).
     "zikpro_uk_vat.install.ensure_vat_roles_and_perms",

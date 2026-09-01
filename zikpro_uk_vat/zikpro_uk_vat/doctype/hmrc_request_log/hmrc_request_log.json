@@ -39,13 +39,12 @@
    "label": "Method"
   },
   {
-   "default": "Success",
    "fieldname": "outcome",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Outcome",
-   "options": "Success\nError"
+   "options": "\nSuccess\nError"
   },
   {
    "fieldname": "http_status",

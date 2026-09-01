@@ -13,3 +13,7 @@ zikpro_uk_vat.patches.v1_0.ensure_vat_docperms
 # Re-reconcile after adding report+export ptypes to UK MTD VAT Return (the prior patch
 # already ran once; ensure_vat_docperms won't re-fire, so a new patch re-lands the grant).
 zikpro_uk_vat.patches.v1_0.grant_return_report_ptype
+# VAT Settings shipped hash-named; on a multi-company app that's unreadable and
+# lets two settings exist per company. Doctype now autonames field:company; this
+# renames existing hash records to their company (enforces one-per-company).
+zikpro_uk_vat.patches.v1_0.rename_vat_settings_to_company

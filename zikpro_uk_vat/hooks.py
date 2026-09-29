@@ -66,6 +66,15 @@ override_whitelisted_methods = {
     # `Authorization: Bearer <access_token>` — to ANY authenticated caller, and
     # msgprints them in developer_mode. Route the leaky twin to the safe one.
     "zikpro_uk_vat.api.validate_fraud_headers": "zikpro_uk_vat.cockpit.validate_fraud_headers",
+    # BS4 / env-refactor step 3: the frozen api.py HMRC twins hardcode the PRODUCTION base
+    # and bypass the env-aware cockpit path + the FPH chokepoint gate. The SPA never calls
+    # them (it uses cockpit.*); route them to a refusing stub so no reachable HMRC path
+    # escapes the per-company environment resolver and the FPH gate. api.py stays byte-frozen.
+    "zikpro_uk_vat.api.submit_vat_return_to_hmrc": "zikpro_uk_vat.security.disabled_legacy_hmrc",
+    "zikpro_uk_vat.api.fetch_all_obligations": "zikpro_uk_vat.security.disabled_legacy_hmrc",
+    "zikpro_uk_vat.api.fetch_liabilities": "zikpro_uk_vat.security.disabled_legacy_hmrc",
+    "zikpro_uk_vat.api.fetch_payments": "zikpro_uk_vat.security.disabled_legacy_hmrc",
+    "zikpro_uk_vat.api.refresh_access_token": "zikpro_uk_vat.security.disabled_legacy_hmrc",
 }
 
 # override_whitelisted_methods = {

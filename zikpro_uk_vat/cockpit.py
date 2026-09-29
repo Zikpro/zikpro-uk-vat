@@ -172,6 +172,16 @@ def _default_broker_url():
 	`VAT Settings.broker_url` is authoritative (see `_broker_settings`); this only seeds it.
 	"""
 	return (frappe.conf.get("hmrc_broker_url") or DEFAULT_BROKER_URL).rstrip("/")
+
+
+# The SANDBOX broker — the SAME on both branches (env is the token, not the branch). "Get sandbox
+# access" always provisions against sandbox, whatever the deployment, so a production site can still
+# offer a test account (on a separate test site) without touching its live connection.
+SANDBOX_BROKER_URL = "https://zikops.frappe.cloud"
+
+
+def _sandbox_broker_url():
+	return (frappe.conf.get("hmrc_sandbox_broker_url") or SANDBOX_BROKER_URL).rstrip("/")
 _MSG_NOT_CONNECTED = "Not connected to HMRC."
 _MSG_NO_VRN = "No VAT registration number set on the Company."
 _MSG_NO_HMRC = "Could not reach HMRC. Please try again."
@@ -872,7 +882,7 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 	if not settings_name:
 		return False
 	row = frappe.db.get_value(
-		VAT_SETTINGS, settings_name, ["use_broker", "broker_tenant_id"], as_dict=True)
+		VAT_SETTINGS, settings_name, ["use_broker", "broker_tenant_id", "broker_url"], as_dict=True)
 	# Already a broker tenant → nothing to do.
 	if row and row.use_broker and row.broker_tenant_id:
 		return True
@@ -880,11 +890,15 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 	token = _safe_password(frappe.get_doc(VAT_SETTINGS, settings_name), "broker_signup_token")
 	if not token:
 		return False
+	# Register against the broker this site was pointed at (e.g. the SANDBOX broker after
+	# get_sandbox_access), falling back to the branch/config default. Otherwise a self-serve
+	# sandbox token would try to register at the production broker on a main deployment.
+	reg_url = ((row and row.broker_url) or _default_broker_url()).rstrip("/")
 	payload = {"company_name": company or frappe.local.site, "site_url": frappe.utils.get_url(),
 			   "signup_token": token}
 	if vrn:
 		payload["vrn"] = vrn
-	r = _broker_call(_default_broker_url(), "self_register", payload)
+	r = _broker_call(reg_url, "self_register", payload)
 	if not r.get("ok") or not r.get("tenant_id"):
 		return False
 	if r.get("already_registered"):
@@ -893,7 +907,7 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 		return False
 	doc = frappe.get_doc(VAT_SETTINGS, settings_name)
 	doc.use_broker = 1
-	doc.broker_url = (r.get("broker_url") or _default_broker_url()).rstrip("/")
+	doc.broker_url = (r.get("broker_url") or reg_url).rstrip("/")
 	doc.broker_tenant_id = r["tenant_id"]
 	doc.broker_shared_secret = r.get("shared_secret")
 	# env-refactor step 2: environment derived from the broker the tenant connected to (token),
@@ -951,6 +965,55 @@ def _broker_call(broker_url, endpoint, payload):
 		frappe.log_error(f"[cockpit] broker {endpoint} {resp.status_code}: {resp.text[:300]}", _LOG_DASHBOARD)
 		return {}
 	return resp.json().get("message") or {}
+
+
+@frappe.whitelist()
+def get_sandbox_access():
+	"""Self-serve SANDBOX onboarding (#4/G1) — the tenant side of the broker's create_sandbox_tenant.
+
+	Provisions a throwaway HMRC sandbox test organisation (VRN + Gov Gateway login) via the SANDBOX
+	broker, stores the returned signup token, points this site at the sandbox broker in sandbox mode,
+	and returns the test credentials so the user can Connect immediately. A test VRN can never file
+	live, so this is safe and needs no admin.
+
+	Refuses if the company is already registered for PRODUCTION — provisioning sandbox here would
+	replace the live connection; get a sandbox on a separate test site instead (same fail-safe as
+	the step-5 pairing guard). The Gov Gateway credentials are shown to the user to TYPE into HMRC's
+	own login page during Connect — the app never auto-enters them."""
+	_require("write")
+	c = _connection()
+	if not c["settings"]:
+		return {"ok": False, "message": _MSG_NO_SETTINGS}
+	doc = frappe.get_doc(VAT_SETTINGS, c["settings"])
+	if (doc.broker_environment or "") == "production":
+		return {"ok": False, "message": (
+			"This company is connected to the PRODUCTION environment. Get a sandbox on a separate "
+			"test site — provisioning a sandbox here would replace your live HMRC connection."
+		)}
+	broker_url = _sandbox_broker_url()
+	r = _broker_call(broker_url, "create_sandbox_tenant",
+					 {"company_name": c["company"] or frappe.local.site, "site_url": frappe.utils.get_url()})
+	if not r.get("ok") or not r.get("signup_token"):
+		return {"ok": False, "message": (
+			r.get("message") or "The sandbox broker did not provision a test account. Please try again."
+		)}
+	# Store the token + sandbox broker + environment, but do NOT flip use_broker on: broker mode
+	# requires a complete connection (tenant id + shared secret), which only self_register produces
+	# at Connect. Connect (_ensure_broker_registration) then registers against this stored broker_url
+	# and sets use_broker atomically. Leaving use_broker as-is keeps the record valid (B49).
+	doc.broker_url = broker_url
+	doc.broker_signup_token = r["signup_token"]
+	doc.broker_environment = "sandbox"
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {
+		"ok": True,
+		"vrn": r.get("vrn"),
+		"gateway_user_id": r.get("gateway_user_id"),
+		"gateway_password": r.get("gateway_password"),
+		"message": "Sandbox test account created. Press Connect to HMRC, then sign in with the "
+				   "Government Gateway details below (they work only on HMRC's sandbox).",
+	}
 
 
 @frappe.whitelist()

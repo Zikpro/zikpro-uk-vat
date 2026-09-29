@@ -638,3 +638,57 @@ def prove_environment_guards():
 	passed = sum(1 for v in res.values() if v)
 	print(f"ENV-GUARDS PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_get_sandbox_access():
+	"""#4/G1: get_sandbox_access provisions via the sandbox broker (create_sandbox_tenant MOCKED),
+	stores the returned signup token, points the site at the sandbox broker in sandbox mode, returns
+	the test credentials to display, and REFUSES when the company is already on production (never
+	replace a live connection with a sandbox)."""
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+
+	sn = _c._connection()["settings"]
+	doc = _f.get_doc("VAT Settings", sn)
+	saved = {k: doc.get(k) for k in ("use_broker", "broker_url", "broker_tenant_id", "broker_environment")}
+	saved_tok = _f.get_doc("VAT Settings", sn).get_password("broker_signup_token", raise_exception=False)
+	orig_call = _c._broker_call
+	res = {}
+	FAKE = {"ok": True, "signup_token": "zkp_sandbox_tok", "vrn": "666000000",
+			"gateway_user_id": "sbuser", "gateway_password": "sbpass", "environment": "sandbox",
+			"broker_url": _c._sandbox_broker_url()}
+	try:
+		# Start unregistered (broker mode off) so the production guard does not block the happy
+		# path and the record stays valid when get_sandbox_access saves (B49).
+		_f.db.set_value("VAT Settings", sn, {"broker_environment": None, "broker_tenant_id": None, "use_broker": 0})
+		_f.clear_cache()
+		_c._broker_call = lambda url, ep, payload: dict(FAKE) if ep == "create_sandbox_tenant" else {}
+
+		r = _c.get_sandbox_access()
+		res["ok"] = r.get("ok") is True
+		res["returns_vrn"] = r.get("vrn") == "666000000"
+		res["returns_gateway"] = r.get("gateway_user_id") == "sbuser" and r.get("gateway_password") == "sbpass"
+		res["token_stored"] = _f.get_doc("VAT Settings", sn).get_password("broker_signup_token") == "zkp_sandbox_tok"
+		res["env_sandbox"] = _f.db.get_value("VAT Settings", sn, "broker_environment") == "sandbox"
+		res["broker_url_sandbox"] = _f.db.get_value("VAT Settings", sn, "broker_url") == _c._sandbox_broker_url()
+		# use_broker is NOT flipped here (broker mode needs a complete connection); Connect sets it.
+		res["record_stays_valid"] = _f.db.get_value("VAT Settings", sn, "use_broker") in (0, None)
+
+		# PRODUCTION company -> refused; the live connection is never replaced by a sandbox.
+		_f.db.set_value("VAT Settings", sn, "broker_environment", "production")
+		_f.clear_cache()
+		r2 = _c.get_sandbox_access()
+		res["production_refused"] = r2.get("ok") is False and "PRODUCTION" in (r2.get("message") or "")
+	finally:
+		_c._broker_call = orig_call
+		d = _f.get_doc("VAT Settings", sn)
+		for k, v in saved.items():
+			d.set(k, v)
+		d.broker_signup_token = saved_tok or None
+		d.save(ignore_permissions=True)
+		_f.db.commit()
+		_f.clear_cache()
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"GET-SANDBOX-ACCESS PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

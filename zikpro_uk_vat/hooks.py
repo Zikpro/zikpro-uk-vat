@@ -295,6 +295,10 @@ doc_events = {
 scheduler_events = {
     "daily": [
         "zikpro_uk_vat.vat_adjustment_schedule.generate_due_adjustments",
+        # Env-refactor step 5: surface any company whose site-config override contradicts its
+        # token environment (a silent production->test-service downgrade), even if nobody opens
+        # the cockpit. Read-only; logs to Error Log.
+        "zikpro_uk_vat.cockpit.flag_environment_incoherence",
     ],
 }
 

@@ -568,3 +568,73 @@ def prove_broker_environment_backfill():
 	passed = sum(1 for v in res.values() if v)
 	print(f"BROKER-ENV-BACKFILL PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_environment_guards():
+	"""Env-refactor step 5: (1) token<->broker pairing FAILS SAFE — a company already registered
+	for one environment is never silently re-registered into another; (2) the coherence guard +
+	daily scheduled job detect a site-config override that contradicts the token environment
+	(a silent production->test-service downgrade). B175: the scheduled job is called here."""
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+
+	sn = _c._connection()["settings"]
+	doc = _f.get_doc("VAT Settings", sn)
+	saved = {k: doc.get(k) for k in ("use_broker", "broker_tenant_id", "broker_environment")}
+	saved_token = _f.get_doc("VAT Settings", sn).get_password("broker_signup_token", raise_exception=False)
+	orig_call = _c._broker_call
+	orig_sandbox = _f.conf.get("hmrc_sandbox")
+	res = {}
+
+	def fake_reg(broker_url, endpoint, payload):
+		# The broker reports this connection is SANDBOX.
+		return {"ok": True, "already_registered": False, "tenant_id": "tenantENV",
+				"shared_secret": "s" * 30, "broker_url": broker_url, "environment": "sandbox"}
+
+	try:
+		# (1) PAIRING FAIL-SAFE. Company is PRODUCTION with its tenant id cleared (a half-finished
+		# switch), a signup token present so registration proceeds, broker returns SANDBOX.
+		d = _f.get_doc("VAT Settings", sn)
+		d.use_broker = 0; d.broker_tenant_id = None; d.broker_environment = "production"
+		d.broker_signup_token = "tok-env-guard"
+		d.save(ignore_permissions=True); _f.db.commit(); _f.clear_cache()
+
+		_c._broker_call = fake_reg
+		try:
+			_c._ensure_broker_registration(sn, company=d.company)
+			res["silent_downgrade_refused"] = False
+		except _f.ValidationError:
+			res["silent_downgrade_refused"] = True
+		_c._broker_call = orig_call
+		# the refused attempt must not have moved the company off production
+		res["env_unchanged_after_refusal"] = \
+			_f.db.get_value("VAT Settings", sn, "broker_environment") == "production"
+
+		# (2) COHERENCE GUARD. production token, NO config override -> coherent.
+		_f.conf.hmrc_sandbox = 0
+		_f.db.set_value("VAT Settings", sn, "broker_environment", "production")
+		coherent, msg = _c._environment_coherence(sn)
+		res["coherent_when_no_override"] = coherent is True and msg is None
+
+		# production token + site config forcing SANDBOX -> incoherent, message names both envs.
+		_f.conf.hmrc_sandbox = 1
+		bad_coherent, bad_msg = _c._environment_coherence(sn)
+		res["incoherent_detected"] = bad_coherent is False and bool(bad_msg) \
+			and "production" in bad_msg and "sandbox" in bad_msg
+		# the daily scheduled job flags it (call the job — B175).
+		res["daily_job_flags_it"] = _c.flag_environment_incoherence() >= 1
+	finally:
+		_c._broker_call = orig_call
+		_f.conf.hmrc_sandbox = orig_sandbox
+		d = _f.get_doc("VAT Settings", sn)
+		for k, v in saved.items():
+			d.set(k, v)
+		d.broker_signup_token = saved_token or None
+		d.save(ignore_permissions=True); _f.db.commit(); _f.clear_cache()
+		for n in _f.get_all("Error Log", filters={"method": "VAT environment mismatch"}, pluck="name"):
+			_f.delete_doc("Error Log", n, force=True, ignore_permissions=True)
+		_f.db.commit()
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"ENV-GUARDS PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

@@ -656,7 +656,7 @@ def prove_get_sandbox_access():
 	res = {}
 	FAKE = {"ok": True, "signup_token": "zkp_sandbox_tok", "vrn": "666000000",
 			"gateway_user_id": "sbuser", "gateway_password": "sbpass", "environment": "sandbox",
-			"broker_url": _c._sandbox_broker_url()}
+			"broker_url": _c._sandbox_broker_url(), "tenant_id": "tenantSB", "shared_secret": "s" * 40}
 	try:
 		# Start unregistered (broker mode off) so the production guard does not block the happy
 		# path and the record stays valid when get_sandbox_access saves (B49).
@@ -671,8 +671,11 @@ def prove_get_sandbox_access():
 		res["token_stored"] = _f.get_doc("VAT Settings", sn).get_password("broker_signup_token") == "zkp_sandbox_tok"
 		res["env_sandbox"] = _f.db.get_value("VAT Settings", sn, "broker_environment") == "sandbox"
 		res["broker_url_sandbox"] = _f.db.get_value("VAT Settings", sn, "broker_url") == _c._sandbox_broker_url()
-		# use_broker is NOT flipped here (broker mode needs a complete connection); Connect sets it.
-		res["record_stays_valid"] = _f.db.get_value("VAT Settings", sn, "use_broker") in (0, None)
+		# The self-serve endpoint returns a complete connection, so use_broker is flipped on with the
+		# tenant id + secret stored -> Connect goes straight to authorize (no self_register dead-end).
+		res["connection_complete"] = _f.db.get_value("VAT Settings", sn, "use_broker") == 1 \
+			and _f.db.get_value("VAT Settings", sn, "broker_tenant_id") == "tenantSB" \
+			and _f.get_doc("VAT Settings", sn).get_password("broker_shared_secret") == "s" * 40
 
 		# PRODUCTION company -> refused; the live connection is never replaced by a sandbox.
 		_f.db.set_value("VAT Settings", sn, "broker_environment", "production")

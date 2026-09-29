@@ -75,8 +75,22 @@ def _frappe_dependencies():
     return set(data.get("tool", {}).get("bench", {}).get("frappe-dependencies", {}))
 
 
+def _fph_gate_at_chokepoint():
+    """`_file_to_hmrc` is the single function that POSTs a VAT return to HMRC (shared by
+    submit_return and approve_and_submit). It MUST call `_fph_gate`, or a filing path reaches
+    HMRC with unvalidated fraud-prevention headers under the shared broker application — the
+    submit_return bypass fixed 29 Sep. Guards against that reopening."""
+    tree = ast.parse(open(os.path.join(_APP_DIR, "cockpit.py"), encoding="utf-8").read())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == "_file_to_hmrc":
+            called = {n.func.id for n in ast.walk(node)
+                      if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+            return "_fph_gate" in called
+    return False
+
+
 def prove_static_invariants():
-    """BKF-1 + BKF-6 as routine checks. Returns {check: bool}."""
+    """BKF-1 + BKF-6 + the FPH-gate chokepoint, as routine checks. Returns {check: bool}."""
     results = {}
 
     missing = _requests_without_timeout()
@@ -93,6 +107,9 @@ def prove_static_invariants():
     results["bkf6_erpnext_in_required_apps"] = needs_erpnext
     results["bkf6_erpnext_in_frappe_dependencies"] = declares_erpnext
     results["bkf6_required_apps_and_pyproject_agree"] = needs_erpnext == declares_erpnext
+
+    # FPH must be validated at the chokepoint so no filing path can bypass it.
+    results["fph_gate_enforced_in_file_to_hmrc"] = _fph_gate_at_chokepoint()
 
     for check, ok in results.items():
         print(f"[{'PASS' if ok else 'FAIL'}] {check}", flush=True)

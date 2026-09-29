@@ -29,6 +29,7 @@
   "net_eu_supplies_box_8",
   "net_eu_acquisitions_box_9",
   "receipt_section",
+  "filed_environment",
   "form_bundle_number",
   "processing_date",
   "charge_ref_number",
@@ -221,6 +222,16 @@
    "fieldtype": "Data",
    "label": "Form Bundle Number",
    "read_only": 1
+  },
+  {
+   "fieldname": "filed_environment",
+   "fieldtype": "Select",
+   "options": "\nSandbox\nProduction\nUnknown",
+   "label": "Filed Environment",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_standard_filter": 1,
+   "description": "The HMRC environment this return was filed against (BS2). Sandbox filings are test-only and were never received by HMRC live. Leading blank so an unfiled draft is not silently labelled."
   },
   {
    "fieldname": "processing_date",

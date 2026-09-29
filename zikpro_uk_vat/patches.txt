@@ -21,3 +21,6 @@ zikpro_uk_vat.patches.v1_0.rename_vat_settings_to_company
 # VAT Settings). Stamp already-registered tenants with their current effective
 # environment so a develop->main merge can't copy sandbox config onto production.
 zikpro_uk_vat.patches.v1_0.backfill_broker_environment
+# BS2/#19: tag filed returns with their HMRC environment. Existing filings predate the
+# field and their environment isn't knowable after the fact -> mark them 'Unknown'.
+zikpro_uk_vat.patches.v1_0.backfill_filed_environment

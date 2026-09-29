@@ -1741,6 +1741,10 @@ def _apply_boxes(doc, b):
 
 
 def _apply_receipt(doc, receipt):
+	# BS2: tag the return with the environment it was filed against, so History can tell a sandbox
+	# test filing from a live one. Shared by the one-shot and preparer/approver paths.
+	settings = frappe.db.get_value(VAT_SETTINGS, {"company": doc.company}, "name") if doc.company else None
+	doc.filed_environment = _hmrc_environment(settings)
 	doc.form_bundle_number = receipt.get("formBundleNumber")
 	doc.charge_ref_number = receipt.get("chargeRefNumber")
 	doc.payment_indicator = receipt.get("paymentIndicator")
@@ -2095,7 +2099,7 @@ def get_filed_returns():
 		fields=[
 			"name", "reference_key", "period_start_date", "period_end_date",
 			"accounting_scheme", "net_vat_due_box5", "form_bundle_number",
-			"charge_ref_number", "submitted_on",
+			"charge_ref_number", "submitted_on", "filed_environment",
 		],
 		order_by="period_start_date desc",
 	)
@@ -2109,6 +2113,8 @@ def get_filed_returns():
 				"form_bundle_number": r.form_bundle_number,
 				"charge_ref_number": r.charge_ref_number,
 				"submitted_on": str(r.submitted_on) if r.submitted_on else None,
+				# BS2: the environment this was filed against — History flags sandbox test filings.
+				"environment": r.filed_environment or None,
 			}
 	return {"ok": True, "by_key": by_key}
 

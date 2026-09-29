@@ -756,3 +756,42 @@ def prove_notification_email():
 	passed = sum(1 for v in res.values() if v)
 	print(f"NOTIFICATION-EMAIL PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_filed_environment():
+	"""#19/BS2: a filed return is tagged with the environment it was filed against (shared by both
+	filing paths via _apply_receipt), and the backfill marks pre-tag filings 'Unknown' so History
+	never mislabels a sandbox test return as live."""
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+	from zikpro_uk_vat.patches.v1_0 import backfill_filed_environment as _bf
+
+	conn = _c._connection()
+	sn, company = conn["settings"], conn["company"]
+	res = {}
+
+	# 1. _apply_receipt stamps the current environment (in-memory; no filing needed).
+	doc = _f.new_doc("UK MTD VAT Return")
+	doc.company = company
+	_c._apply_receipt(doc, {"formBundleNumber": "ENVTEST-BUNDLE"})
+	res["stamped_at_filing"] = doc.filed_environment == _c._hmrc_environment(sn)
+
+	# 2. backfill: a filed record (has a bundle) with a blank tag -> Unknown.
+	d = _f.new_doc("UK MTD VAT Return")
+	d.company = company
+	d.reference_key = "ENVTEST-BACKFILL-K"
+	d.form_bundle_number = "ENVTEST-BACKFILL-B"
+	d.flags.ignore_mandatory = True
+	d.insert(ignore_permissions=True)
+	_f.db.set_value("UK MTD VAT Return", d.name, "filed_environment", None, update_modified=False)
+	_f.db.commit()
+	try:
+		_bf.execute()
+		res["backfill_unknown"] = _f.db.get_value("UK MTD VAT Return", d.name, "filed_environment") == "Unknown"
+	finally:
+		_f.delete_doc("UK MTD VAT Return", d.name, force=True, ignore_permissions=True)
+		_f.db.commit()
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"FILED-ENVIRONMENT PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

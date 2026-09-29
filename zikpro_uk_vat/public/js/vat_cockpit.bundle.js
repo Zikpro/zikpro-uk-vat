@@ -1512,6 +1512,7 @@ window.mount_vat_cockpit = function (el) {
 											<span v-if="histFiled[o.periodKey].form_bundle_number"> · HMRC receipt {{ histFiled[o.periodKey].form_bundle_number }}</span>
 											<span v-if="histFiled[o.periodKey].scheme"> · {{ histFiled[o.periodKey].scheme }} basis</span>
 											<span v-if="histFiled[o.periodKey].submitted_on"> · {{ fmtDate((histFiled[o.periodKey].submitted_on || '').slice(0,10)) }}</span>
+												<span v-if="histFiled[o.periodKey].environment"> &middot; environment <b>{{ histFiled[o.periodKey].environment }}</b><span v-if="histFiled[o.periodKey].environment !== 'Production'"> (test &mdash; not a live HMRC filing)</span></span>
 										</div>
 										<div v-if="histBusy === o.periodKey" class="text-muted">Loading return…</div>
 										<div v-else-if="histReturns[o.periodKey] && !histReturns[o.periodKey].ok" class="vc-note warn">{{ histReturns[o.periodKey].message }}</div>

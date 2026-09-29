@@ -16,6 +16,9 @@ window.mount_vat_cockpit = function (el) {
 				connBusy: false,
 				connMsg: "",
 				connResult: "",
+				sandboxBusy: false,
+				sandboxResult: null,
+				sandboxMsg: "",
 				obligations: [],
 				oblLoading: false,
 				oblMsg: "",
@@ -885,13 +888,38 @@ window.mount_vat_cockpit = function (el) {
 					},
 				});
 			},
+			getSandbox() {
+				this.sandboxBusy = true;
+				this.sandboxMsg = "";
+				this.sandboxResult = null;
+				frappe.call({
+					method: "zikpro_uk_vat.cockpit.get_sandbox_access",
+					callback: (r) => {
+						this.sandboxBusy = false;
+						const res = r.message || {};
+						if (res.ok) {
+							this.sandboxResult = res;
+							this.loadConnection();
+						} else {
+							this.sandboxMsg = res.message || "Could not create a sandbox test account. Please try again.";
+						}
+					},
+					error: () => {
+						this.sandboxBusy = false;
+						this.sandboxMsg = "Could not reach the sandbox broker. Please try again.";
+					},
+				});
+			},
 		},
 		template: `
 			<div class="vat-cockpit">
 				<div class="vc-head">
 					<div class="vc-head-right">
 						<a class="vc-exit" href="/app" title="Back to the Desk">☰ Desk</a>
-						<span class="vc-badge" :class="{ prod: conn.environment === 'Production' }">{{ conn.environment || 'Sandbox' }}</span>
+						<span class="vc-badge" :class="{ prod: conn.environment === 'Production' }"
+							:title="conn.environment === 'Production' ? 'LIVE — returns are filed to HMRC' : 'Sandbox — test only, nothing is filed to HMRC'">
+							{{ conn.environment === 'Production' ? 'PRODUCTION · LIVE' : 'SANDBOX · test only' }}
+						</span>
 					</div>
 					<div class="vc-title">UK VAT <span class="vc-sub">Making Tax Digital</span></div>
 				</div>
@@ -947,6 +975,26 @@ window.mount_vat_cockpit = function (el) {
 							</button>
 							<button class="vc-btn" :disabled="connLoading" @click="loadConnection">Refresh status</button>
 							<button class="vc-btn" @click="active = 'settings'">VAT Settings</button>
+						</div>
+
+						<div v-if="(conn.environment || 'Sandbox') !== 'Production' && !conn.connected" class="vc-card" style="margin-top:12px">
+							<div class="vc-row">
+								<span class="vc-k">Just want to try it?</span>
+								<button class="vc-btn" :disabled="sandboxBusy" @click="getSandbox">
+									{{ sandboxBusy ? 'Creating…' : 'Get sandbox access' }}
+								</button>
+							</div>
+							<p class="text-muted" style="margin:6px 0 0">
+								Creates a free HMRC <b>sandbox</b> test business — a test VAT number and Government Gateway login — and links this site to it. No token to request, and nothing is ever filed live.
+							</p>
+							<div v-if="sandboxMsg" class="vc-note warn" style="margin-top:8px">{{ sandboxMsg }}</div>
+							<div v-if="sandboxResult" class="vc-note ok-note" style="margin-top:8px">
+								✓ Sandbox test account ready. Press <b>Connect to HMRC</b> above, then sign in at HMRC with:
+								<div class="vc-row"><span class="vc-k">Test VAT number</span><span>{{ sandboxResult.vrn }}</span></div>
+								<div class="vc-row"><span class="vc-k">Gateway user ID</span><span>{{ sandboxResult.gateway_user_id }}</span></div>
+								<div class="vc-row"><span class="vc-k">Gateway password</span><span>{{ sandboxResult.gateway_password }}</span></div>
+								<p class="text-muted" style="margin:6px 0 0">These work only on HMRC's sandbox. Type them into HMRC's own sign-in page when you Connect — the app never enters them for you.</p>
+							</div>
 						</div>
 
 						<div v-if="connMsg" class="vc-note warn">{{ connMsg }}</div>

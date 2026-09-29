@@ -78,6 +78,52 @@ def _hmrc_environment(settings_name=None):
 	return "Production" if _hmrc_production(settings_name) else "Sandbox"
 
 
+def _environment_coherence(settings_name):
+	"""Env-refactor step 5 (startup/connect guard): detect an environment CONTRADICTION on a
+	broker-registered company — a stored token environment that a site-config override silently
+	overrules. Returns (coherent: bool, message: str | None).
+
+	The dangerous case is a company registered for 'production' running on a site with
+	hmrc_sandbox=1: the resolver reads config FIRST, so it files to the TEST service while the
+	user believes they are live — a return that never reaches HMRC. Config still WINS (an admin
+	override is deliberate and may be intentional during testing); this only SURFACES the
+	contradiction so it can never be silent. Coherent when there is no stored environment (the
+	resolver is then the sole authority) or the stored and effective environments agree — which
+	they always do UNLESS a config override is overruling the token."""
+	if not settings_name:
+		return True, None
+	stored = frappe.db.get_value(VAT_SETTINGS, settings_name, "broker_environment")
+	if not stored:
+		return True, None
+	effective = "production" if _hmrc_production(settings_name) else "sandbox"
+	if stored == effective:
+		return True, None
+	msg = frappe._(
+		"Company {0} is registered for the {1} HMRC environment, but this site's configuration "
+		"forces {2} (site config hmrc_sandbox / hmrc_production). Returns for this company will "
+		"file to {2}, not {1}. Remove the override, or deliberately re-register for {2}."
+	).format(settings_name, stored, effective)
+	return False, msg
+
+
+def flag_environment_incoherence():
+	"""Daily scheduler guard (env-refactor step 5). Logs any broker-registered company whose
+	site-config override contradicts its token environment, so a silent misconfiguration is
+	visible in the Error Log even when nobody opens the cockpit. Read-only — never changes state
+	or files anything. Called from prove_environment_guards (B175: every scheduled job is tested)."""
+	flagged = 0
+	for name in frappe.get_all(
+		VAT_SETTINGS, filters={"broker_environment": ["in", ["production", "sandbox"]]}, pluck="name"
+	):
+		coherent, msg = _environment_coherence(name)
+		if not coherent:
+			# Keyword form: keeps the short string as the TITLE (semgrep's log-error length rule
+			# caps the title, not the message) and is order-independent across Frappe versions.
+			frappe.log_error(title="VAT environment mismatch", message=msg)
+			flagged += 1
+	return flagged
+
+
 def _two_factor_active(user):
 	"""True if two-factor auth is enabled for this user (System Settings + role rules). A live
 	filing requires it so the frozen Gov-Client-Multi-Factor header reflects a genuine MFA event
@@ -852,7 +898,22 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 	doc.broker_shared_secret = r.get("shared_secret")
 	# env-refactor step 2: environment derived from the broker the tenant connected to (token),
 	# stored per-company so `_hmrc_production` reads it instead of the branch default.
-	doc.broker_environment = r.get("environment") or None
+	# Step 5 — token<->broker pairing fails SAFE: a company already carrying an environment must
+	# never be silently moved to a different one (e.g. a production company re-registering against
+	# a sandbox broker, or a half-finished switch that cleared the tenant id but not the env).
+	# Refuse loudly; a deliberate switch clears broker_environment first (Go Live / Change Env).
+	new_env = r.get("environment") or None
+	prior_env = doc.broker_environment or None
+	if prior_env and new_env and prior_env != new_env:
+		frappe.throw(
+			frappe._(
+				"This company is registered for the {0} HMRC environment, but the broker you are "
+				"connecting to is {1}. Environments are never switched silently — clear the previous "
+				"registration first (Go Live / Change Environment)."
+			).format(prior_env, new_env),
+			title=frappe._("Environment Mismatch"),
+		)
+	doc.broker_environment = new_env
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 	return True

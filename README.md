@@ -27,6 +27,14 @@ bench get-app https://github.com/Zikpro/zikpro-uk-vat
 bench --site <your-site> install-app zikpro_uk_vat
 ```
 
+> **Filing to HMRC goes through ZikPro's OAuth broker.** For a hosted, always-current
+> build, install from the **Frappe Cloud Marketplace** — that is the copy ZikPro supports
+> for live filing. **Sandbox is self-serve and free:** open the VAT cockpit → Connect →
+> **Get sandbox access** to provision a test VAT number and try a full filing (nothing is
+> sent to HMRC). **Production** files real returns and needs a vetted token — request one
+> from info@zikpro.com. A production site must be a public HTTPS host so the
+> fraud-prevention headers carry a real IP.
+
 ## HMRC Making Tax Digital
 This software connects to HMRC's MTD for VAT API. You remain responsible for the
 accuracy of every return you submit. Figures are computed from the invoices in your

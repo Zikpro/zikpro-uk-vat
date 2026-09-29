@@ -967,6 +967,19 @@ window.mount_vat_cockpit = function (el) {
 							one that is wrong, correct it on the Company first.
 						</div>
 
+						<div v-if="conn.readiness && conn.readiness.length" class="vc-card" style="margin-top:12px">
+							<div class="vc-row"><span class="vc-k"><b>Readiness</b></span><span class="text-muted">before you file</span></div>
+							<template v-for="r in conn.readiness" :key="r.key">
+								<div class="vc-row">
+									<span class="vc-k">{{ r.label }}</span>
+									<span :class="['vc-status', r.status === 'ok' ? 'ok' : (r.status === 'warn' ? 'warn-pill' : 'off')]">
+										{{ r.status === 'ok' ? '✓ OK' : (r.status === 'warn' ? '! Check' : '✗ Action') }}
+									</span>
+								</div>
+								<div v-if="r.detail" class="text-muted" style="margin:-2px 0 6px;font-size:12px">{{ r.detail }}</div>
+							</template>
+						</div>
+
 						<div class="vc-actions">
 							<button v-if="!conn.connected" class="vc-btn primary"
 								:disabled="connBusy || !conn.can_connect"
@@ -995,6 +1008,14 @@ window.mount_vat_cockpit = function (el) {
 								<div class="vc-row"><span class="vc-k">Gateway password</span><span>{{ sandboxResult.gateway_password }}</span></div>
 								<p class="text-muted" style="margin:6px 0 0">These work only on HMRC's sandbox. Type them into HMRC's own sign-in page when you Connect — the app never enters them for you.</p>
 							</div>
+						</div>
+
+						<div v-if="(conn.environment || 'Sandbox') !== 'Production'" class="vc-note" style="margin-top:12px">
+							<b>Ready to go live?</b> Production files real returns to HMRC and needs a vetted token.
+							Request one from
+							<a href="mailto:info@zikpro.com?subject=UK%20MTD%20VAT%20production%20access">info@zikpro.com</a>,
+							then paste it in <a href="#" @click.prevent="active = 'settings'">VAT Settings</a> — the
+							environment switches to Production automatically.
 						</div>
 
 						<div v-if="connMsg" class="vc-note warn">{{ connMsg }}</div>

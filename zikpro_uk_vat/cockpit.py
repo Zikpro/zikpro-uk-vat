@@ -1405,6 +1405,22 @@ def _hmrc_return_payload(period_key, b):
 def _file_to_hmrc(c, period_key, b):
 	"""POST the 9 boxes to HMRC and normalise the response. Shared by the one-shot
 	submit_return and the approver flow. Returns {ok, receipt} or {ok:False, ...}."""
+	# A2 GATE, enforced at the CHOKEPOINT so no filing path can bypass it (previously only
+	# approve_and_submit gated; submit_return reached HMRC without it). Validate the
+	# fraud-prevention headers against HMRC's validator before the POST: BLOCK on
+	# HMRC-reported header errors so inaccurate FPH never reach HMRC under the shared broker
+	# application; fail-OPEN (logged) if the validator itself is unavailable, so a validator/
+	# HMRC outage does not halt all filing (HMRC still monitors FPH on the real submission).
+	verdict, detail = _fph_gate(c["settings"])
+	if verdict == "invalid":
+		return {
+			"ok": False,
+			"fph_blocked": True,
+			"message": "Filing blocked: the fraud-prevention headers failed HMRC validation. "
+			+ "Open the return on the live, public-facing site in a browser and retry. " + detail,
+		}
+	if verdict == "unavailable":
+		frappe.log_error(f"[cockpit] FPH gate could not validate (filing allowed): {detail}", _LOG_DASHBOARD)
 	payload = _hmrc_return_payload(period_key, b)
 	try:
 		resp = _sandbox_post(c["settings"], f"/organisations/vat/{c['vrn']}/returns", payload)
@@ -1709,18 +1725,8 @@ def approve_and_submit(return_name, finalised=False):
 			+ " ".join(fig.get("warnings", [])),
 		}
 	b = fig["boxes"]
-	# A2 GATE: validate fraud-prevention headers before filing. Block on HMRC-reported header
-	# errors; fail-open (with a logged warning) if the validator itself is unavailable.
-	verdict, detail = _fph_gate(c["settings"])
-	if verdict == "invalid":
-		return {
-			"ok": False,
-			"fph_blocked": True,
-			"message": "Filing blocked: the fraud-prevention headers failed HMRC validation. "
-			+ "Open the return on the live, public-facing site in a browser and retry. " + detail,
-		}
-	if verdict == "unavailable":
-		frappe.log_error(f"[cockpit] FPH gate could not validate (filing allowed): {detail}", _LOG_DASHBOARD)
+	# The A2 FPH gate now lives inside _file_to_hmrc (the shared chokepoint), so it covers
+	# this approver path and the one-shot submit_return path identically.
 	res = _file_to_hmrc(c, period_key, b)
 	if not res.get("ok"):
 		return res

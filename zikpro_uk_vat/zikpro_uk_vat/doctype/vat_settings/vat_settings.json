@@ -29,6 +29,7 @@
   "broker_url",
   "broker_tenant_id",
   "broker_shared_secret",
+  "broker_environment",
   "vat_accounts_section",
   "vat_accounts",
   "vat_treatments"
@@ -175,6 +176,15 @@
    "fieldtype": "Password",
    "label": "Broker Shared Secret",
    "depends_on": "use_broker"
+  },
+  {
+   "fieldname": "broker_environment",
+   "fieldtype": "Data",
+   "label": "Broker Environment",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "use_broker",
+   "description": "production or sandbox — the environment of the broker this tenant registered with (set by code at Connect; drives which HMRC endpoints are used)."
   },
   {
    "fieldname": "vat_accounts_section",

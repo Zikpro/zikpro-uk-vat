@@ -27,43 +27,55 @@ HMRC_SANDBOX_TOKEN_URL = f"{HMRC_SANDBOX_BASE}/oauth/token"
 HMRC_PROD_BASE = "https://api.service.hmrc.gov.uk"
 
 
-def _hmrc_production():
-	"""True when this deployment files against LIVE HMRC.
+def _hmrc_production(settings_name=None):
+	"""True when this tenant files against LIVE HMRC.
 
-	Branch default (BRANCH-DIVERGENT — the only intentional difference between develop and
-	main): on **develop** the default is the HMRC SANDBOX, so a staging/test deploy can never
-	accidentally file a real return; on **main** (marketplace/production) the default is
-	PRODUCTION. Either branch can override per-site: `hmrc_sandbox=1` forces sandbox and
-	`hmrc_production=1` forces production. Keep this line in sync-by-intent on promotion:
-	develop returns False, main returns True.
+	Resolution order (env-refactor step 2 — environment is now TOKEN-DERIVED, per company):
+	  1. explicit site config: `hmrc_sandbox=1` forces sandbox, `hmrc_production=1` forces prod;
+	  2. **per-company broker environment** — stamped on VAT Settings at `self_register` from the
+	     broker the tenant connected to (production broker → 'production', sandbox → 'sandbox').
+	     Authoritative once registered; it can't drift on a develop→main merge because it comes
+	     from the token, not the branch;
+	  3. branch default (last-resort fallback for an UNregistered tenant, which cannot file
+	     anyway) — BRANCH-DIVERGENT: develop False, main True. Step 4 equalises this once every
+	     deployed site declares its environment via config.
 	"""
 	conf = frappe.conf
 	if conf.get("hmrc_sandbox"):
 		return False
 	if conf.get("hmrc_production") is not None:
 		return bool(conf.get("hmrc_production"))
-	return False  # develop default: SANDBOX (main default: True)
+	if settings_name:
+		# Defensive: the column may not exist yet on a site that has not migrated the new
+		# `broker_environment` field — fall through to the branch default rather than throw.
+		try:
+			env = frappe.db.get_value(VAT_SETTINGS, settings_name, "broker_environment")
+		except Exception:
+			env = None
+		if env:
+			return env == "production"
+	return False  # branch default: SANDBOX (main default: True) — fallback only
 
 
-def _hmrc_base():
+def _hmrc_base(settings_name=None):
 	"""The HMRC API base for live calls (obligations/submit/liabilities/payments) — production
-	or sandbox per the deployment switch. (The FPH validator is a sandbox-only test endpoint and
-	always uses the sandbox base.)"""
-	return HMRC_PROD_BASE if _hmrc_production() else HMRC_SANDBOX_BASE
+	or sandbox per the tenant's environment. (The FPH validator is a sandbox-only test endpoint
+	and always uses the sandbox base.)"""
+	return HMRC_PROD_BASE if _hmrc_production(settings_name) else HMRC_SANDBOX_BASE
 
 
-def _hmrc_authorize_url():
-	"""OAuth authorize endpoint — production or sandbox per the deployment switch."""
-	return f"{_hmrc_base()}/oauth/authorize"
+def _hmrc_authorize_url(settings_name=None):
+	"""OAuth authorize endpoint — production or sandbox per the tenant's environment."""
+	return f"{_hmrc_base(settings_name)}/oauth/authorize"
 
 
-def _hmrc_token_url():
-	"""OAuth token endpoint — production or sandbox per the deployment switch."""
-	return f"{_hmrc_base()}/oauth/token"
+def _hmrc_token_url(settings_name=None):
+	"""OAuth token endpoint — production or sandbox per the tenant's environment."""
+	return f"{_hmrc_base(settings_name)}/oauth/token"
 
 
-def _hmrc_environment():
-	return "Production" if _hmrc_production() else "Sandbox"
+def _hmrc_environment(settings_name=None):
+	return "Production" if _hmrc_production(settings_name) else "Sandbox"
 
 
 def _two_factor_active(user):
@@ -315,7 +327,7 @@ def get_dashboard_data():
 		# Ready to press Connect: broker mode needs a signup token (or an existing tenant).
 		"can_connect": signup_set or already_tenant,
 		# Sandbox vs Production — driven by the deployment switch (site config hmrc_production).
-		"environment": _hmrc_environment(),
+		"environment": _hmrc_environment(c["settings"]),
 		# Gate premium UI (PE-annual / CGS engines) — Base shows an upsell, Pro shows the tools.
 		"pro_installed": _pro_installed(),
 		# If Pro was cancelled while multi-year CGS / Partial-Exemption-Annual schedules were
@@ -371,7 +383,7 @@ def get_connection_status():
 	c["can_connect"] = signup_set or already_tenant
 	# The cockpit header badge reads conn.environment — without it the badge falls back to
 	# 'Sandbox' even on a production deployment. Keep in lockstep with get_dashboard_data.
-	c["environment"] = _hmrc_environment()
+	c["environment"] = _hmrc_environment(c["settings"])
 	return c
 
 
@@ -838,6 +850,9 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 	doc.broker_url = (r.get("broker_url") or _default_broker_url()).rstrip("/")
 	doc.broker_tenant_id = r["tenant_id"]
 	doc.broker_shared_secret = r.get("shared_secret")
+	# env-refactor step 2: environment derived from the broker the tenant connected to (token),
+	# stored per-company so `_hmrc_production` reads it instead of the branch default.
+	doc.broker_environment = r.get("environment") or None
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 	return True
@@ -1165,7 +1180,7 @@ def _sandbox_request(method, settings_name, endpoint, *, params=None, json_data=
 		extra["Gov-Test-Scenario"] = test_scenario
 	if json_data is not None:
 		extra["Content-Type"] = "application/json"
-	url = f"{_hmrc_base()}{endpoint}"
+	url = f"{_hmrc_base(settings_name)}{endpoint}"
 
 	def _send():
 		_throttle()
@@ -1716,7 +1731,7 @@ def approve_and_submit(return_name, finalised=False):
 	# genuine MFA event. Requiring 2FA at the point of filing makes that header truthful by
 	# construction (every login is a real MFA event) — without editing the frozen FPH code.
 	# Sandbox is left open so testing/pilots don't need 2FA configured.
-	if _hmrc_production() and not _two_factor_active(frappe.session.user):
+	if _hmrc_production(c["settings"]) and not _two_factor_active(frappe.session.user):
 		return {
 			"ok": False,
 			"mfa_required": True,

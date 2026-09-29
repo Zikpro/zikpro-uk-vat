@@ -515,3 +515,56 @@ def prove_broker_tenant():
 	passed = sum(1 for v in res.values() if v)
 	print(f"BROKER-TENANT PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_broker_environment_backfill():
+	"""Env-refactor step 2 backfill: the patch stamps `broker_environment` on
+	already-registered tenants (broker_tenant_id set, field blank) with their
+	current effective environment, leaves an already-set value alone, and never
+	touches a non-broker site. Proves the migration to step-4 branch-equalisation
+	can't strand a pre-existing tenant."""
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+	from zikpro_uk_vat.patches.v1_0 import backfill_broker_environment as _bf
+
+	sn = _c._connection()["settings"]
+	doc = _f.get_doc("VAT Settings", sn)
+	saved = {k: doc.get(k) for k in ("broker_tenant_id", "broker_environment")}
+	res = {}
+
+	def _set(tenant_id, env):
+		_f.db.set_value("VAT Settings", sn, {"broker_tenant_id": tenant_id, "broker_environment": env})
+		_f.db.commit(); _f.clear_cache()
+
+	try:
+		# The effective environment while the field is BLANK (config/branch fallback) —
+		# what the backfill must write. Compute it before the field is populated.
+		_set("tenantBF", "")
+		default_env = _c._hmrc_environment(sn).lower()      # 'production' | 'sandbox'
+		opposite = "sandbox" if default_env == "production" else "production"
+
+		# A) registered tenant, blank field -> stamped with the effective environment.
+		_bf.execute()
+		res["blank_registered_stamped"] = \
+			_f.db.get_value("VAT Settings", sn, "broker_environment") == default_env
+
+		# B) already set to the OPPOSITE of the default -> patch must NOT clobber it
+		# (idempotency proven against a value the patch would otherwise write differently,
+		# per "a state-unchanged test must start from a value the code could change").
+		_set("tenantBF", opposite)
+		_bf.execute()
+		res["existing_value_preserved"] = \
+			_f.db.get_value("VAT Settings", sn, "broker_environment") == opposite
+
+		# C) non-broker site (no tenant id) -> field left blank.
+		_set(None, "")
+		_bf.execute()
+		res["non_broker_left_blank"] = \
+			not _f.db.get_value("VAT Settings", sn, "broker_environment")
+	finally:
+		_f.db.set_value("VAT Settings", sn, saved)
+		_f.db.commit(); _f.clear_cache()
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"BROKER-ENV-BACKFILL PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

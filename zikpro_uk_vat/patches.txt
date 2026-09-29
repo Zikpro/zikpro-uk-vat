@@ -17,3 +17,7 @@ zikpro_uk_vat.patches.v1_0.grant_return_report_ptype
 # lets two settings exist per company. Doctype now autonames field:company; this
 # renames existing hash records to their company (enforces one-per-company).
 zikpro_uk_vat.patches.v1_0.rename_vat_settings_to_company
+# Env-refactor step 2: environment is now token-derived (broker_environment on
+# VAT Settings). Stamp already-registered tenants with their current effective
+# environment so a develop->main merge can't copy sandbox config onto production.
+zikpro_uk_vat.patches.v1_0.backfill_broker_environment

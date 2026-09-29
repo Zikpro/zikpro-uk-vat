@@ -98,7 +98,13 @@ ${u}`:d)}let a=new Function("Vue",i)(nr);return a._rc=!0,Mu[n]=a}Hi(Am);window.m
 							</p>
 							<div v-if="sandboxMsg" class="vc-note warn" style="margin-top:8px">{{ sandboxMsg }}</div>
 							<div v-if="sandboxResult" class="vc-note ok-note" style="margin-top:8px">
-								\u2713 Sandbox test account ready. Press <b>Connect to HMRC</b> above, then sign in at HMRC with:
+								\u2713 Sandbox test account ready. To use it:
+								<ol style="margin:6px 0 8px 18px;padding:0">
+									<li>Set your company's VAT number to <b>{{ sandboxResult.vrn }}</b> in
+										<a href="#" @click.prevent="active = 'settings'">VAT Settings</a> \u2014 otherwise HMRC rejects with a number mismatch.</li>
+									<li>Press <b>Connect to HMRC</b> above.</li>
+									<li>Sign in on HMRC's page with the Government Gateway details below.</li>
+								</ol>
 								<div class="vc-row"><span class="vc-k">Test VAT number</span><span>{{ sandboxResult.vrn }}</span></div>
 								<div class="vc-row"><span class="vc-k">Gateway user ID</span><span>{{ sandboxResult.gateway_user_id }}</span></div>
 								<div class="vc-row"><span class="vc-k">Gateway password</span><span>{{ sandboxResult.gateway_password }}</span></div>
@@ -106,12 +112,17 @@ ${u}`:d)}let a=new Function("Vue",i)(nr);return a._rc=!0,Mu[n]=a}Hi(Am);window.m
 							</div>
 						</div>
 
-						<div v-if="(conn.environment || 'Sandbox') !== 'Production'" class="vc-note" style="margin-top:12px">
-							<b>Ready to go live?</b> Production files real returns to HMRC and needs a vetted token.
-							Request one from
-							<a href="mailto:info@zikpro.com?subject=UK%20MTD%20VAT%20production%20access">info@zikpro.com</a>,
-							then paste it in <a href="#" @click.prevent="active = 'settings'">VAT Settings</a> \u2014 the
-							environment switches to Production automatically.
+						<div v-if="(conn.environment || 'Sandbox') !== 'Production'" class="vc-card" style="margin-top:12px">
+							<div class="vc-row">
+								<span class="vc-k"><b>Go live (Production)</b></span>
+								<a class="vc-btn primary" href="mailto:info@zikpro.com?subject=UK%20MTD%20VAT%20production%20access">Request production access</a>
+							</div>
+							<p class="text-muted" style="margin:6px 0 0">
+								Production files <b>real</b> returns to HMRC. There is no toggle \u2014 it needs a vetted production
+								token (it can't be self-served like sandbox). Request one above, then paste it in
+								<a href="#" @click.prevent="active = 'settings'">VAT Settings</a>; the environment switches to
+								Production automatically and your sandbox test data is not carried over.
+							</p>
 						</div>
 
 						<div v-if="connMsg" class="vc-note warn">{{ connMsg }}</div>
@@ -865,4 +876,4 @@ ${u}`:d)}let a=new Function("Vue",i)(nr);return a._rc=!0,Mu[n]=a}Hi(Am);window.m
 			</div>
 		`}).mount(e)};})();
 /*! #__NO_SIDE_EFFECTS__ */
-//# sourceMappingURL=vat_cockpit.bundle.ID2SSPI6.js.map
+//# sourceMappingURL=vat_cockpit.bundle.L3NSWOF7.js.map

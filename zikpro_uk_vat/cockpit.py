@@ -1046,13 +1046,17 @@ def get_sandbox_access():
 		return {"ok": False, "message": (
 			r.get("message") or "The sandbox broker did not provision a test account. Please try again."
 		)}
-	# Store the token + sandbox broker + environment, but do NOT flip use_broker on: broker mode
-	# requires a complete connection (tenant id + shared secret), which only self_register produces
-	# at Connect. Connect (_ensure_broker_registration) then registers against this stored broker_url
-	# and sets use_broker atomically. Leaving use_broker as-is keeps the record valid (B49).
+	# Store a COMPLETE broker connection when the self-serve endpoint registered the tenant for us
+	# (returns tenant_id + shared_secret). use_broker=1 is then valid (B49) and Connect goes straight
+	# to authorize — no separate self_register, which a stale prior registration (already_registered,
+	# hijack-safe) would dead-end at "enter a token". Falls back to token-only for an older broker.
 	doc.broker_url = broker_url
 	doc.broker_signup_token = r["signup_token"]
 	doc.broker_environment = "sandbox"
+	if r.get("tenant_id") and r.get("shared_secret"):
+		doc.broker_tenant_id = r["tenant_id"]
+		doc.broker_shared_secret = r["shared_secret"]
+		doc.use_broker = 1
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 	return {

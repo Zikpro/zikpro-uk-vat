@@ -68,6 +68,25 @@ def disabled_legacy_oauth(*args, **kwargs):
 	frappe.throw(frappe._(_LEGACY_OAUTH_MSG), frappe.PermissionError)
 
 
+@frappe.whitelist()
+def disabled_legacy_hmrc(*args, **kwargs):
+	"""Refuse the frozen api.py HMRC twins (submit / obligations / liabilities / payments /
+	refresh) without editing the byte-frozen api.py.
+
+	Those methods hardcode the PRODUCTION HMRC base (`HMRC_API_BASE_URL`) and bypass the
+	env-aware cockpit path — so a sandbox tenant calling `api.submit_vat_return_to_hmrc`
+	directly would file to LIVE HMRC, and it would skip the FPH gate that lives at the
+	cockpit chokepoint. The SPA never calls them (it uses `cockpit.*`, which resolves the
+	environment per-company and gates FPH); routing them here closes the bypass. Use the
+	VAT cockpit to connect, read obligations, and file.
+	"""
+	frappe.throw(
+		frappe._("This endpoint is disabled. Use the VAT cockpit — it selects the correct "
+				 "environment (sandbox/production) and validates fraud-prevention headers before filing."),
+		frappe.PermissionError,
+	)
+
+
 def redact_secrets(text):
 	"""Strip Bearer tokens / OAuth secrets from arbitrary log text."""
 	if not text:

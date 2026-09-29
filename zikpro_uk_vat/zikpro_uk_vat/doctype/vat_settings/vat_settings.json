@@ -9,6 +9,7 @@
   "details_tab",
   "company",
   "billing_contact",
+  "notification_email",
   "vat_accounting_scheme",
   "scheme_effective_year",
   "flat_rate_percentage",
@@ -59,6 +60,13 @@
    "in_list_view": 1,
    "label": "Billing Contact",
    "reqd": 1
+  },
+  {
+   "fieldname": "notification_email",
+   "fieldtype": "Data",
+   "options": "Email",
+   "label": "Notification Email",
+   "description": "Where ZikPro sends VAT-app notices — broker sign-up token delivery, version-deprecation warnings and fraud-prevention-header alerts. Without it those notices cannot reach you."
   },
   {
    "default": "Standard (Accrual)",

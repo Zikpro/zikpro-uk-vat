@@ -723,3 +723,36 @@ def prove_readiness():
 	passed = sum(1 for v in res.values() if v)
 	print(f"READINESS PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_notification_email():
+	"""#7: VAT Settings captures a notification_email (Email-validated) — the address ZikPro uses
+	for token / deprecation / FPH notices. A valid address saves; an invalid one is refused."""
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+
+	sn = _c._connection()["settings"]
+	saved = _f.db.get_value("VAT Settings", sn, "notification_email")
+	res = {}
+	try:
+		d = _f.get_doc("VAT Settings", sn)
+		d.notification_email = "vat.notices@example.com"
+		d.save(ignore_permissions=True)
+		res["valid_saved"] = _f.db.get_value("VAT Settings", sn, "notification_email") == "vat.notices@example.com"
+
+		d2 = _f.get_doc("VAT Settings", sn)
+		d2.notification_email = "not-an-email"
+		try:
+			d2.save(ignore_permissions=True)
+			res["invalid_refused"] = False
+		except _f.ValidationError:
+			res["invalid_refused"] = True
+	finally:
+		d = _f.get_doc("VAT Settings", sn)
+		d.notification_email = saved or None
+		d.save(ignore_permissions=True)
+		_f.db.commit()
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"NOTIFICATION-EMAIL PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

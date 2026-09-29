@@ -137,7 +137,10 @@ def update_mfa_timestamp(user):
         frappe.clear_cache(doctype="User MFA Timestamp")
         frappe.clear_cache(user=user)
 
-        frappe.publish_realtime('mfa_updated', {'user': user, 'timestamp': timestamp})
+        # Scope to the affected user's own sessions. A bare publish_realtime broadcasts to every
+        # connected user across all tenants (frappe-realtime-pick-room) — leaking who updated MFA
+        # and when; only this user's own UI needs to know their MFA timestamp changed.
+        frappe.publish_realtime('mfa_updated', {'user': user, 'timestamp': timestamp}, user=user)
 
     except Exception:
         msg = f"User: {user}\nError: {frappe.get_traceback()}\nSQL: {frappe.db.last_query}"

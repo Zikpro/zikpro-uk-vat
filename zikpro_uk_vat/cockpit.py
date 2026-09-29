@@ -99,6 +99,21 @@ _LOG_DASHBOARD = "UK VAT Dashboard"
 # The product's central OAuth broker. A marketplace install with no HMRC client
 # credentials of its own self-registers here on first Connect and files through it.
 DEFAULT_BROKER_URL = "https://auth.ziktax.com"  # main: PRODUCTION broker (develop = sandbox zikops.frappe.cloud)
+
+
+def _default_broker_url():
+	"""The OAuth broker this site registers with, for its FIRST self-registration.
+
+	Config-overridable (parity with the HMRC host in `_hmrc_production`): a site sets
+	`hmrc_broker_url` to point at the production or sandbox broker explicitly; absent that,
+	it falls back to the branch constant `DEFAULT_BROKER_URL`. This is step 1 of moving the
+	environment OUT of branch-divergent code — once every site declares its broker via config,
+	the two branches can carry identical code and a `develop→main` merge can never copy a
+	sandbox broker onto production. Behaviour-preserving today: deployed sites with no config
+	keep the branch default. After the FIRST registration the tenant's own stored
+	`VAT Settings.broker_url` is authoritative (see `_broker_settings`); this only seeds it.
+	"""
+	return (frappe.conf.get("hmrc_broker_url") or DEFAULT_BROKER_URL).rstrip("/")
 _MSG_NOT_CONNECTED = "Not connected to HMRC."
 _MSG_NO_VRN = "No VAT registration number set on the Company."
 _MSG_NO_HMRC = "Could not reach HMRC. Please try again."
@@ -811,7 +826,7 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 			   "signup_token": token}
 	if vrn:
 		payload["vrn"] = vrn
-	r = _broker_call(DEFAULT_BROKER_URL, "self_register", payload)
+	r = _broker_call(_default_broker_url(), "self_register", payload)
 	if not r.get("ok") or not r.get("tenant_id"):
 		return False
 	if r.get("already_registered"):
@@ -820,7 +835,7 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 		return False
 	doc = frappe.get_doc(VAT_SETTINGS, settings_name)
 	doc.use_broker = 1
-	doc.broker_url = (r.get("broker_url") or DEFAULT_BROKER_URL).rstrip("/")
+	doc.broker_url = (r.get("broker_url") or _default_broker_url()).rstrip("/")
 	doc.broker_tenant_id = r["tenant_id"]
 	doc.broker_shared_secret = r.get("shared_secret")
 	doc.save(ignore_permissions=True)

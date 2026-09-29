@@ -692,3 +692,34 @@ def prove_get_sandbox_access():
 	passed = sum(1 for v in res.values() if v)
 	print(f"GET-SANDBOX-ACCESS PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_readiness():
+	"""#4: the Connect readiness panel (guide-before-the-choice). get_connection_status returns a
+	`readiness` list; assert the decidable rows and the public-host logic that a live filing needs
+	(production on localhost = bad; sandbox on localhost = warn; public host = ok)."""
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+
+	res = {}
+	conn = _c.get_connection_status()
+	rows = {r["key"]: r for r in conn.get("readiness", [])}
+	res["has_all_rows"] = {"connection", "environment", "host", "fph"}.issubset(rows.keys())
+	res["env_row"] = rows.get("environment", {}).get("status") in ("ok", "warn")
+
+	orig_pub = _c._is_public_host
+	try:
+		_c._is_public_host = lambda: False  # simulate localhost
+		hs = {r["key"]: r for r in _c._readiness({"environment": "Sandbox", "can_connect": True})}
+		res["sandbox_localhost_warn"] = hs["host"]["status"] == "warn"
+		hp = {r["key"]: r for r in _c._readiness({"environment": "Production", "connected": True})}
+		res["prod_localhost_bad"] = hp["host"]["status"] == "bad"
+		_c._is_public_host = lambda: True  # simulate a public host
+		hpub = {r["key"]: r for r in _c._readiness({"environment": "Production", "connected": True})}
+		res["public_host_ok"] = hpub["host"]["status"] == "ok"
+	finally:
+		_c._is_public_host = orig_pub
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"READINESS PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

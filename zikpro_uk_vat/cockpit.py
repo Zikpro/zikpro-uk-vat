@@ -412,6 +412,52 @@ def _orphaned_pro_schedules():
 	)
 
 
+def _is_public_host():
+	"""True when this site is served on a public host (not localhost). Production filing needs a
+	public HTTPS host so the fraud-prevention headers carry a real client IP; sandbox is fine on
+	localhost (the tenant pulls tokens; the browser round-trip is the user's own machine)."""
+	url = (frappe.utils.get_url() or "").lower()
+	return not any(h in url for h in ("localhost", "127.0.0.1", "0.0.0.0", "://[::1]", ".local"))
+
+
+def _readiness(c):
+	"""Pre-flight readiness for the Connect screen (guide-before-the-choice, not a gate). Each row
+	is {key,label,status: ok|warn|bad,detail} — it surfaces what a genuine filing needs so the user
+	fixes it BEFORE submitting, rather than after HMRC rejects."""
+	env = c.get("environment") or "Sandbox"
+	is_prod = env == "Production"
+	public = _is_public_host()
+	rows = []
+	if c.get("connected"):
+		rows.append({"key": "connection", "label": "Connected to HMRC", "status": "ok", "detail": ""})
+	elif c.get("vrn_mismatch"):
+		rows.append({"key": "connection", "label": "Re-authorisation needed", "status": "bad",
+					 "detail": "The VAT number changed since you connected — reconnect to re-authorise."})
+	elif c.get("can_connect"):
+		rows.append({"key": "connection", "label": "Ready to connect", "status": "warn",
+					 "detail": "Press Connect to HMRC to authorise."})
+	else:
+		rows.append({"key": "connection", "label": "Not connected", "status": "bad",
+					 "detail": "Add a broker signup token — or press Get sandbox access to try it free."})
+	rows.append({"key": "environment",
+				 "label": ("Production — live filing" if is_prod else "Sandbox — test only"),
+				 "status": ("ok" if is_prod else "warn"),
+				 "detail": ("" if is_prod else "Nothing is filed to HMRC in sandbox.")})
+	if public:
+		rows.append({"key": "host", "label": "Public HTTPS host", "status": "ok", "detail": ""})
+	elif is_prod:
+		rows.append({"key": "host", "label": "Not a public host", "status": "bad",
+					 "detail": "Production filing needs a public HTTPS site so fraud-prevention headers carry a real IP. Host on Frappe Cloud."})
+	else:
+		rows.append({"key": "host", "label": "Local host (sandbox only)", "status": "warn",
+					 "detail": "Fine for sandbox. Production needs a public HTTPS host for accurate fraud-prevention headers."})
+	rows.append({"key": "fph", "label": "Fraud-prevention headers",
+				 "status": ("ok" if public else "warn"),
+				 "detail": ("Checked automatically before each filing." if public
+							else "May be inaccurate on a local host; validated at filing.")})
+	return rows
+
+
 @frappe.whitelist()
 def get_connection_status():
 	"""Richer connection detail for the Connect screen (read-only, truthful).
@@ -440,6 +486,9 @@ def get_connection_status():
 	# The cockpit header badge reads conn.environment — without it the badge falls back to
 	# 'Sandbox' even on a production deployment. Keep in lockstep with get_dashboard_data.
 	c["environment"] = _hmrc_environment(c["settings"])
+	# Pre-flight readiness panel (green/amber/red) — guide before the submit.
+	c["readiness"] = _readiness(c)
+	c["public_host"] = _is_public_host()
 	return c
 
 
@@ -1041,7 +1090,13 @@ def get_authorize_url():
 		r = _broker_call(broker_url, "authorize", {
 			"tenant_id": tenant_id, "nonce": nonce, "sig": _broker_sig(secret, f"{tenant_id}|{nonce}")})
 		if not r.get("ok") or not r.get("authorize_url"):
-			return {"ok": False, "message": "The OAuth broker did not return an authorize URL. Check the broker settings."}
+			# _broker_call returns {} when the broker is unreachable/errored (it logs the detail).
+			# Say so plainly instead of blaming the user's settings — the usual cause is a transient
+			# broker outage, and the fix is to retry, not to change anything.
+			return {"ok": False, "message": (
+				"Couldn't reach the ZikPro broker just now — it may be briefly unavailable. "
+				"Please try Connect again in a moment. If it keeps failing, contact info@zikpro.com."
+			)}
 		return {"ok": True, "url": r["authorize_url"]}
 
 	# Broker-only product: with no broker registration, the site needs a ZikPro signup token.

@@ -798,3 +798,55 @@ def prove_filed_environment():
 	passed = sum(1 for v in res.values() if v)
 	print(f"FILED-ENVIRONMENT PROOF {passed}/{len(res)}: {res}", flush=True)
 	return res
+
+
+def prove_verify_grant():
+	"""P1: Connect verifies HMRC actually granted access for the company's VRN. A stale-session grant
+	(HMRC 403 CLIENT_OR_AGENT_NOT_AUTHORISED) is caught at Connect — actionable incognito message —
+	instead of a false green 'Connected' that fails on the first real call. A valid grant (200/404)
+	passes; a non-auth error or a transient failure does NOT block (fail-open)."""
+	import requests
+	import frappe as _f
+	from zikpro_uk_vat import cockpit as _c
+
+	sn = _c._connection()["settings"]
+	company = _f.db.get_value("VAT Settings", sn, "company")
+	saved_vrn = _f.db.get_value("Company", company, "uk_vat_registration_number")
+	orig = _c._sandbox_get
+	res = {}
+
+	class _R:
+		def __init__(self, code, body=None):
+			self.status_code, self._b, self.text = code, (body or {}), str(body or {})
+
+		def json(self):
+			return self._b
+
+	def _boom(*a, **k):
+		raise requests.RequestException("hmrc down")
+
+	try:
+		_f.db.set_value("Company", company, "uk_vat_registration_number", "999999999")
+		# provably wrong grant -> message names the VRN and tells the user to use incognito
+		_c._sandbox_get = lambda *a, **k: _R(403, {"code": "CLIENT_OR_AGENT_NOT_AUTHORISED"})
+		m = _c._verify_grant(sn)
+		res["auth_error_flagged"] = bool(m) and "999999999" in m and "INCOGNITO" in m.upper()
+		# valid grant (200) / no obligations (404) -> no block
+		_c._sandbox_get = lambda *a, **k: _R(200, {"obligations": []})
+		res["valid_grant_ok"] = _c._verify_grant(sn) is None
+		_c._sandbox_get = lambda *a, **k: _R(404, {})
+		res["no_obligations_ok"] = _c._verify_grant(sn) is None
+		# a non-auth HMRC error is NOT a proven mismatch -> fail-open
+		_c._sandbox_get = lambda *a, **k: _R(500, {"code": "SERVER_ERROR"})
+		res["other_error_no_block"] = _c._verify_grant(sn) is None
+		# HMRC unreachable -> fail-open (never strand a possibly-valid connection)
+		_c._sandbox_get = _boom
+		res["transient_no_block"] = _c._verify_grant(sn) is None
+	finally:
+		_c._sandbox_get = orig
+		_f.db.set_value("Company", company, "uk_vat_registration_number", saved_vrn)
+		_f.db.commit()
+
+	passed = sum(1 for v in res.values() if v)
+	print(f"VERIFY-GRANT PROOF {passed}/{len(res)}: {res}", flush=True)
+	return res

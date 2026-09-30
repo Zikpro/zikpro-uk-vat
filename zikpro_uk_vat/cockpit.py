@@ -1200,6 +1200,15 @@ def complete_oauth(code=None, state=None, broker_code=None, nonce=None):
 	)
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
+	err = _verify_grant(settings_name)
+	if err:
+		d = frappe.get_doc(VAT_SETTINGS, settings_name)
+		d.access_token = None
+		d.refresh_token = None
+		d.authorised_vrn = None
+		d.save(ignore_permissions=True)
+		frappe.db.commit()
+		return None, err
 	return settings_name, None
 
 
@@ -1227,6 +1236,18 @@ def _complete_oauth_broker(broker_code, nonce):
 	doc.authorised_vrn = frappe.db.get_value("Company", doc.company, "uk_vat_registration_number")
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
+	# Verify HMRC actually granted access for this VRN — catch a stale-session mismatch here rather
+	# than showing a false 'Connected' that fails on the first real call. Clear the useless tokens so
+	# the state reflects reality and the user reconnects with the right account.
+	err = _verify_grant(settings_name)
+	if err:
+		d = frappe.get_doc(VAT_SETTINGS, settings_name)
+		d.access_token = None
+		d.refresh_token = None
+		d.authorised_vrn = None
+		d.save(ignore_permissions=True)
+		frappe.db.commit()
+		return None, err
 	return settings_name, None
 
 
@@ -1500,6 +1521,40 @@ def get_obligations(status=None):
 		"message": _hmrc_error(resp, c["vrn"]),
 		"auth_error": _hmrc_code(resp) in _HMRC_AUTH_ERRORS,
 	}
+
+
+def _verify_grant(settings_name):
+	"""Post-Connect grant verification. The OAuth token only proves someone signed in; HMRC ties
+	access to the account's MTD-VAT enrolment, so a STALE browser session can grant for a DIFFERENT
+	VRN than this company's. Without a check the app would record authorised_vrn = the company VRN
+	and show a green 'Connected' that 403s on the first real call (a status the code WROTE, not the
+	state HMRC holds — the B174/B-status family).
+
+	Probe obligations for the company VRN. ONLY a definitive CLIENT_OR_AGENT_NOT_AUTHORISED / VRN
+	auth error means the grant is provably wrong; a 200/404 means it is fine, and a transient or
+	other error does NOT block (fail-open — never strand a valid connection over an HMRC hiccup).
+	Returns an actionable message when the grant is wrong, else None."""
+	from frappe.utils import add_to_date, nowdate
+
+	company = frappe.db.get_value(VAT_SETTINGS, settings_name, "company")
+	vrn = frappe.db.get_value("Company", company, "uk_vat_registration_number") if company else None
+	if not vrn:
+		return None
+	try:
+		resp = _sandbox_get(settings_name, f"/organisations/vat/{vrn}/obligations",
+							 params={"from": add_to_date(nowdate(), months=-12), "to": nowdate()})
+	except requests.RequestException:
+		return None  # HMRC unreachable — do not block a possibly-valid connection
+	if resp.status_code in (200, 404):
+		return None
+	if _hmrc_code(resp) in _HMRC_AUTH_ERRORS:
+		return (
+			"HMRC did not authorise this sign-in for VAT number {0}. You likely signed in with a "
+			"different Government Gateway account — a browser can silently reuse an earlier HMRC "
+			"session. Please Connect again in a PRIVATE / INCOGNITO window and sign in with the "
+			"account enrolled for MTD VAT for {0}."
+		).format(vrn)
+	return None  # some other HMRC error — not a proven grant mismatch, so don't block
 
 
 def _dated_list(endpoint_suffix, list_key, log_label):

@@ -44,7 +44,7 @@ def _si(lines):
 	si.append("taxes", {"charge_type": "On Net Total", "account_head": VAT_ACCOUNT, "description": "VAT", "rate": 20})
 	si.insert(ignore_permissions=True)
 	si.submit()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	return si.name
 
 
@@ -52,7 +52,7 @@ def _clean():
 	for n in frappe.get_all("Sales Invoice", filters={"posting_date": INV_DATE, "docstatus": 1}, pluck="name"):
 		frappe.get_doc("Sales Invoice", n).cancel()
 		frappe.delete_doc("Sales Invoice", n, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 
 def run():
@@ -74,7 +74,7 @@ def run():
 		s.append("vat_accounts", {"vat_type": ck.OUTPUT_VAT, "account": VAT_ACCOUNT})
 	s.save(ignore_permissions=True)
 	frappe.db.set_value("VAT Settings", s.name, "vat_accounting_scheme", ck.ACCRUAL)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	def _null_warn(fig):
 		return [w for w in fig.get("warnings", []) if "no VAT liability classification" in w or "NO VAT liability classification" in w]
@@ -111,14 +111,14 @@ def run():
 	inv = _si([(std, 1000), (None, 750)])
 	frappe.db.set_value("Sales Invoice", inv, "vat_cash_excluded", 1, update_modified=False)
 	frappe.db.set_value("VAT Settings", s.name, "vat_accounting_scheme", ck.CASH)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	cash_fig = ck.get_return_figures(*PERIOD)
 	cash_warns = _null_warn(cash_fig)
 	check("cash basis is actually in use for CASE 4", cash_fig.get("basis") == "cash")
 	check("bare line on CASH scheme -> null-classification warning FIRES (P0-1)", len(cash_warns) == 1)
 	# restore accrual so later proofs don't inherit a cash scheme
 	frappe.db.set_value("VAT Settings", s.name, "vat_accounting_scheme", ck.ACCRUAL)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	_clean()
 	print(f"\n=== NULL-CLASSIFICATION (P0-1/B92) PROOF: {sum(results)}/{len(results)} passed ===", flush=True)

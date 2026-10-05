@@ -95,7 +95,7 @@ def reverse_bad_debt_on_recovery(payment_doc, method=None):
 			adj.flags.ignore_permissions = True
 			adj.submit()
 			frappe.db.set_value(SCHEDULE, s.name, "status", "Reversed", update_modified=False)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- runs in the daily scheduled job (no request auto-commit); persists the adjustment/schedule write
 
 
 # Capital Goods Scheme engine (_cgs_interval_adjustment / generate_cgs_schedule /
@@ -127,6 +127,6 @@ def generate_due_adjustments(as_of=None):
 		sched.db_set("generated_on", as_of, update_modified=False)
 		sched.db_set("status", "Claimed", update_modified=False)
 		counts["generated"] += 1
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- runs in the daily scheduled job (no request auto-commit); persists the adjustment/schedule write
 	frappe.logger().info(f"VAT adjustment schedule generation ({as_of}): {counts}")
 	return counts

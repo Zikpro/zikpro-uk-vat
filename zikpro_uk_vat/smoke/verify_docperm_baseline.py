@@ -31,7 +31,7 @@ def run():
 
 	# Apply the (now-reconciling) perm materialiser — corrects any drifted rows.
 	ensure_vat_roles_and_perms()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	appr = _perm(SETTINGS, "UK VAT Approver")
 	check("B40: Approver row on VAT Settings exists", appr is not None)

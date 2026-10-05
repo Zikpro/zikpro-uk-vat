@@ -118,7 +118,7 @@ def record_return_filed(return_doc, from_date, to_date):
 			touched.append((dt, inv.name))
 	for dt, name in touched:
 		_refresh_status(dt, name)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- reachable from a scheduled job (no request auto-commit); persists the VAT ledger write
 
 
 def record_payment_realisation(doc, method=None):

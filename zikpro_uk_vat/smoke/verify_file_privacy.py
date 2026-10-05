@@ -12,7 +12,7 @@ TAG = "p14-file-privacy-test"
 def _clean():
 	for n in frappe.get_all("File", filters={"file_name": ["like", f"{TAG}%"]}, pluck="name"):
 		frappe.delete_doc("File", n, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 
 def _mk(attached_to_doctype, attached_to_name, is_private):
@@ -21,7 +21,7 @@ def _mk(attached_to_doctype, attached_to_name, is_private):
 		f"{TAG}-{attached_to_doctype or 'none'}.txt", "x",
 		attached_to_doctype, attached_to_name, is_private=is_private,
 	)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	return f
 
 

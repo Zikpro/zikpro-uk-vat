@@ -101,10 +101,10 @@ def _grant(authorize_url, user_id, password):
 	"""
 	script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_oauth_grant.py")
 	python_bin = os.environ.get("HMRC_SMOKE_PYTHON") or sys.executable
-	# nosemgrep: frappe-subprocess-exec -- dev-only smoke harness (never shipped in a
-	# request path); argv is a static list, python_bin/script are code-controlled, and
-	# the three interpolated values are a sandbox authorize URL + HMRC test-user creds.
-	out = subprocess.run(  # noqa
+	# Dev-only smoke harness (never shipped in a request path): argv is a static list,
+	# python_bin/script are code-controlled, and the three interpolated values are a sandbox
+	# authorize URL + HMRC test-user creds. nosemgrep must be on the match line to take effect.
+	out = subprocess.run(  # noqa  # nosemgrep: frappe-subprocess-exec
 		[python_bin, script, authorize_url, user_id, password],
 		capture_output=True,
 		text=True,
@@ -142,7 +142,7 @@ def run():
 
 	# 2. connect that VRN
 	frappe.db.set_value("Company", cockpit._connection()["company"], "uk_vat_registration_number", vrn)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	auth = cockpit.get_authorize_url()
 	if not r.check("Build authorize URL", auth.get("ok"), auth.get("message", "")):
 		return _finish(r, original_vrn)
@@ -156,7 +156,7 @@ def run():
 	# snapshot — i.e. the previous user's access token — and every subsequent call
 	# would 403 CLIENT_OR_AGENT_NOT_AUTHORISED. Commit to start a fresh snapshot,
 	# and drop the cached document so the new token is actually read.
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	frappe.clear_document_cache(cockpit.VAT_SETTINGS, settings_name)
 	r.check("Access token stored", cockpit._connection()["connected"])
 
@@ -233,7 +233,7 @@ def _finish(r, original_vrn=None):
 		# leave the site's VRN as we found it; tokens now belong to the throwaway
 		# user, so re-authorise before using the cockpit for demos again.
 		frappe.db.set_value("Company", cockpit._connection()["company"], "uk_vat_registration_number", original_vrn)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	passed = len(r.rows) - len(r.failed)
 	print(f"\n=== HMRC SMOKE: {passed}/{len(r.rows)} passed ===", flush=True)
 	for f in r.failed:

@@ -18,7 +18,7 @@ def _settings():
 	if not name:
 		d = frappe.get_doc({"doctype": ck.VAT_SETTINGS, "company": COMPANY})
 		d.insert(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 		name = d.name
 	return name
 
@@ -34,14 +34,14 @@ def run():
 	doc = frappe.get_doc(ck.VAT_SETTINGS, name)
 	doc.access_token = "AT-heal-test"
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	# Corrupt the stored ciphertext to simulate an encryption_key change.
 	frappe.db.sql(
 		"update `__Auth` set `password`=%s where doctype=%s and name=%s and fieldname='access_token'",
 		("garbage-not-a-fernet-token", ck.VAT_SETTINGS, name),
 	)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	frappe.clear_cache()
 	doc = frappe.get_doc(ck.VAT_SETTINGS, name)
 
@@ -79,7 +79,7 @@ def run():
 		(ck.VAT_SETTINGS, name),
 	)
 	frappe.db.set_value(ck.VAT_SETTINGS, name, "access_token", None, update_modified=False)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	print(f"\n=== PASSWORD-HEAL (P0-5/B47) PROOF: {sum(results)}/{len(results)} passed ===", flush=True)
 	return sum(results) == len(results)

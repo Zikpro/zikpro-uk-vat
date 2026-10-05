@@ -4,12 +4,14 @@ File your UK **Making Tax Digital (MTD) VAT** return to HMRC directly from ERPNe
 no spreadsheets, no bridging tools. The nine-box return is built from the Sales and
 Purchase invoices already in your books and submitted straight to HMRC.
 
-> Free/base edition. A commercial **Pro** edition adds Cash Accounting & Flat Rate
-> schemes, year-end adjustments (Partial Exemption, Capital Goods Scheme), multi-company,
-> and accountant/multi-client filing.
+> Free/base edition — a complete filer including all three VAT schemes. A commercial
+> **Pro** edition adds the automatic year-end and sector adjustment engines: Partial
+> Exemption (Notice 706), Capital Goods Scheme (Notice 706/2), and Domestic Reverse
+> Charge for construction/CIS (Notice 735).
 
 ## What it does
-- **Standard (accrual) VAT scheme** — the full nine-box return from your invoices
+- **All three VAT schemes** — Standard (accrual), Cash Accounting (Notice 731) and Flat
+  Rate (Notice 733) — the full nine-box return from your invoices
 - **Connect to HMRC** securely (Making Tax Digital for VAT API)
 - **Obligations** — see what's due and when
 - **Submit** the return with HMRC's legal declaration, and keep the receipt

@@ -21,7 +21,16 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="${1:-$(cd "$HERE/.." && pwd)/zikpro_uk_vat}"
+if [ -n "${1:-}" ]; then
+	APP_DIR="$1"
+else
+	# Auto-detect the app package: the subdir of the repo root that holds hooks.py.
+	# Keeps this one script identical across base / Pro / broker.
+	ROOT_GUESS="$(cd "$HERE/.." && pwd)"
+	HOOK="$(find "$ROOT_GUESS" -maxdepth 2 -name hooks.py -not -path '*/node_modules/*' 2>/dev/null | head -1)"
+	[ -z "$HOOK" ] && { echo "FAIL: could not auto-detect the app package (no hooks.py under $ROOT_GUESS)." >&2; exit 2; }
+	APP_DIR="$(dirname "$HOOK")"
+fi
 APP_DIR="$(cd "$APP_DIR" && pwd)"
 REPO_ROOT="$(cd "$APP_DIR/.." && pwd)"   # .semgrepignore lives at the repo root
 PKG="$(basename "$APP_DIR")"

@@ -25,7 +25,7 @@ def run():
 	if not ck.vat_accounts(ck.OUTPUT_VAT):
 		s.append("vat_accounts", {"vat_type": ck.OUTPUT_VAT, "account": VAT_ACCOUNT})
 		s.save(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	def _recon(boxes, basis):
 		return ck._reconciliation_warning(boxes, basis, *EMPTY)
@@ -47,14 +47,14 @@ def run():
 	saved = list(s2.vat_accounts)
 	s2.vat_accounts = []
 	s2.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	skipped = len(ck._reconciliation_warning({"box1": 100, "box4": 0}, "accrual", *EMPTY)) == 0
 	# restore mapping
 	s3 = frappe.get_doc("VAT Settings", s.name)
 	for r in saved:
 		s3.append("vat_accounts", {"vat_type": r.vat_type, "account": r.account})
 	s3.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	check("no VAT accounts mapped -> reconciliation self-skips", skipped)
 
 	# 5. reconcile_period (refactored) still returns its diagnostic shape.

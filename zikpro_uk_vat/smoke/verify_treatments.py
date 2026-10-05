@@ -44,7 +44,7 @@ def run():
 	zero = _template("VAT 0", 0)
 	exempt = _template("VAT Exempt", 0)
 	outside = _template("VAT Outside Scope", 0)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	# classify them in VAT Settings (outside-scope excluded from Box 6/7)
 	s = frappe.get_doc("VAT Settings", ck._connection()["settings"])
@@ -59,13 +59,13 @@ def run():
 		s.append("vat_accounts", {"vat_type": ck.OUTPUT_VAT, "account": VAT_ACCOUNT})
 	s.save(ignore_permissions=True)
 	frappe.db.set_value("VAT Settings", s.name, "vat_accounting_scheme", ck.ACCRUAL)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	# clean any prior run
 	for n in frappe.get_all("Sales Invoice", filters={"posting_date": INV_DATE, "docstatus": 1}, pluck="name"):
 		frappe.get_doc("Sales Invoice", n).cancel()
 		frappe.delete_doc("Sales Invoice", n, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	# One invoice: 1000@20 + 1000@5 + 500 zero + 500 exempt + 700 OUTSIDE SCOPE
 	#   VAT = 200 + 50 = 250
@@ -81,7 +81,7 @@ def run():
 	si.append("taxes", {"charge_type": "On Net Total", "account_head": VAT_ACCOUNT, "description": "VAT", "rate": 20})
 	si.insert(ignore_permissions=True)
 	si.submit()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	print(f"INVOICE {si.name} net={si.base_net_total} vat={si.base_total_taxes_and_charges}", flush=True)
 
 	fig = ck.get_return_figures(*PERIOD)
@@ -94,7 +94,7 @@ def run():
 	s = frappe.get_doc("VAT Settings", s.name)
 	s.vat_treatments = [t for t in s.vat_treatments if t.item_tax_template != outside]
 	s.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	fig2 = ck.get_return_figures(*PERIOD)
 	check("unclassified -> Box 6 back to full 3700", fig2["boxes"]["box6"], 3700)
 	check("unclassified -> a warning is raised", 1 if fig2.get("warnings") else 0, 1)
@@ -104,5 +104,5 @@ def run():
 	# cleanup this invoice so the demo period stays clean
 	frappe.get_doc("Sales Invoice", si.name).cancel()
 	frappe.delete_doc("Sales Invoice", si.name, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	print(f"\n=== TREATMENTS VERIFY: {sum(results)}/{len(results)} passed ===", flush=True)

@@ -27,7 +27,7 @@ def _mk_settings(**vals):
 	d.flags.ignore_mandatory = True
 	d.flags.ignore_validate = True
 	d.insert(ignore_permissions=True, ignore_if_duplicate=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	return d.name
 
 
@@ -80,7 +80,7 @@ def run():
 		ck._broker_call = orig
 		if frappe.db.exists("VAT Settings", _SN):
 			frappe.delete_doc("VAT Settings", _SN, force=True, ignore_permissions=True)
-			frappe.db.commit()
+			frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 	passed = sum(1 for r in results if r)
 	print(f"SELF-REGISTER GUARD {passed}/{len(results)}", flush=True)

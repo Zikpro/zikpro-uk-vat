@@ -19,7 +19,7 @@ def _clean():
 		frappe.delete_doc("User", USER, force=True, ignore_permissions=True)
 	if frappe.db.exists("Role", ROLE):
 		frappe.delete_doc("Role", ROLE, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 
 def run():
@@ -33,7 +33,7 @@ def run():
 		frappe.get_doc({"doctype": "Role", "role_name": ROLE, "two_factor_auth": 1}).insert(ignore_permissions=True)
 		u = frappe.get_doc({"doctype": "User", "email": USER, "first_name": "2FA", "send_welcome_email": 0,
 							 "roles": [{"role": ROLE}]}); u.insert(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 		frappe.db.set_single_value("System Settings", "enable_two_factor_auth", 0); frappe.clear_cache()
 		check("2FA off -> _two_factor_active(user) False", ck._two_factor_active(USER) is False)

@@ -23,7 +23,7 @@ def _del():
 		frappe.delete_doc("Role", ROLE, force=True, ignore_permissions=True)
 	for n in frappe.get_all("User MFA Timestamp", filters={"user": USER}, pluck="name"):
 		frappe.delete_doc("User MFA Timestamp", n, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 
 def setup_live():
@@ -36,7 +36,7 @@ def setup_live():
 	update_password(USER, PWD)
 	secret = twofactor.get_otpsecret_for_(USER)          # base32 TOTP seed (test user, ephemeral)
 	twofactor.set_default(USER + "_otplogin", 1)                    # go straight to authenticator, skip setup email
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	print(f"SETUP user={USER} pwd={PWD} secret={secret}", flush=True)
 	return {"user": USER, "password": PWD, "secret": secret}
 

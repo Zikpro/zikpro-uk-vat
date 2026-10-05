@@ -16,7 +16,7 @@ def _clean():
 		# refuses to un-file a real return) doesn't block deletion of the fixture.
 		frappe.db.set_value("UK MTD VAT Return", n, "docstatus", 0, update_modified=False)
 		frappe.delete_doc("UK MTD VAT Return", n, force=True, ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 
 
 def _draft(with_receipt):
@@ -33,7 +33,7 @@ def _draft(with_receipt):
 	if with_receipt:
 		doc.form_bundle_number = "TEST-BUNDLE-123"
 	doc.insert(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- dev smoke/verify harness run via `bench execute` (never a request path, not shipped runtime); bench-execute does not auto-commit, so fixtures/results must be committed to be readable
 	return doc
 
 

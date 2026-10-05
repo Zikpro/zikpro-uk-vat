@@ -909,7 +909,7 @@ def save_settings(
 		return {"ok": True, "message": "No changes to save.", "settings": get_settings()}
 
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 
 	# A1-4: Notice 731 §6.4 transitional adjustment on a Cash<->non-Cash switch.
 	note = _apply_scheme_transition(doc.company, old_scheme, doc.vat_accounting_scheme, cur) if scheme_changed else None
@@ -978,7 +978,7 @@ def _ensure_broker_registration(settings_name, company=None, vrn=None):
 		)
 	doc.broker_environment = new_env
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return True
 
 
@@ -1058,7 +1058,7 @@ def get_sandbox_access():
 		doc.broker_shared_secret = r["shared_secret"]
 		doc.use_broker = 1
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {
 		"ok": True,
 		"vrn": r.get("vrn"),
@@ -1199,7 +1199,7 @@ def complete_oauth(code=None, state=None, broker_code=None, nonce=None):
 		"Company", doc.company, "uk_vat_registration_number"
 	)
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	err = _verify_grant(settings_name)
 	if err:
 		d = frappe.get_doc(VAT_SETTINGS, settings_name)
@@ -1207,7 +1207,7 @@ def complete_oauth(code=None, state=None, broker_code=None, nonce=None):
 		d.refresh_token = None
 		d.authorised_vrn = None
 		d.save(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 		return None, err
 	return settings_name, None
 
@@ -1235,7 +1235,7 @@ def _complete_oauth_broker(broker_code, nonce):
 	doc.refresh_token = r.get("refresh_token")
 	doc.authorised_vrn = frappe.db.get_value("Company", doc.company, "uk_vat_registration_number")
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	# Verify HMRC actually granted access for this VRN — catch a stale-session mismatch here rather
 	# than showing a false 'Connected' that fails on the first real call. Clear the useless tokens so
 	# the state reflects reality and the user reconnects with the right account.
@@ -1246,7 +1246,7 @@ def _complete_oauth_broker(broker_code, nonce):
 		d.refresh_token = None
 		d.authorised_vrn = None
 		d.save(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 		return None, err
 	return settings_name, None
 
@@ -1294,7 +1294,7 @@ def _refresh_token(settings_name):
 		if r.get("refresh_token"):
 			doc.refresh_token = r["refresh_token"]
 		doc.save(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 		return True
 
 	refresh = _safe_password(doc, "refresh_token") if doc.refresh_token else None
@@ -1323,7 +1323,7 @@ def _refresh_token(settings_name):
 	if tok.get("refresh_token"):
 		doc.refresh_token = tok["refresh_token"]  # rotating — persist the new one
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return True
 
 
@@ -1859,7 +1859,7 @@ def prepare_return(period_key, from_date, to_date):
 	doc.prepared_on = frappe.utils.now_datetime()
 	doc.approved_by = None
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "return_name": doc.name, "boxes": b, "prepared_by": doc.prepared_by}
 
 
@@ -2534,7 +2534,7 @@ def setup_default_vat_accounts():
 
 	if mapped:
 		doc.save(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {
 		"ok": True,
 		"created": created,
@@ -2608,7 +2608,7 @@ def setup_default_vat_templates():
 
 	if mapped:
 		doc.save(ignore_permissions=True)
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {
 		"ok": True,
 		"created": created,
@@ -2671,7 +2671,7 @@ def save_vat_accounts(accounts):
 	for r in rows:
 		doc.append("vat_accounts", r)
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "message": "VAT account mapping saved.", "count": len(rows)}
 
 
@@ -2725,7 +2725,7 @@ def save_vat_treatments(treatments):
 	for r in rows:
 		doc.append("vat_treatments", r)
 	doc.save(ignore_permissions=True)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "message": "VAT treatments saved.", "count": len(rows)}
 
 
@@ -3028,7 +3028,7 @@ def create_adjustment(posting_date, adjustment_type, vat_box, amount, reason,
 	doc.origin_period = origin_period
 	doc.insert(ignore_permissions=True)
 	doc.submit()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "name": doc.name, "message": f"Adjustment {doc.name} recorded."}
 
 
@@ -3039,7 +3039,7 @@ def cancel_adjustment(name):
 	doc = frappe.get_doc(VAT_ADJUSTMENT, name)
 	if doc.docstatus == 1:
 		doc.cancel()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "message": f"Adjustment {name} cancelled."}
 
 
@@ -3086,7 +3086,7 @@ def cancel_schedule(name):
 	doc = frappe.get_doc(VAT_ADJUSTMENT_SCHEDULE, name)
 	if doc.docstatus == 1:
 		doc.cancel()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "message": f"Schedule {name} cancelled."}
 
 
@@ -3132,7 +3132,7 @@ def create_schedule(schedule_type, trigger_date, vat_box, amount, reason,
 	doc.insert(ignore_permissions=True)
 	doc.flags.ignore_permissions = True
 	doc.submit()
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persists connection/token/filing state around an external HMRC/broker call, or in the OAuth callback / scheduled job, where request auto-commit does not guarantee durability
 	return {"ok": True, "name": doc.name, "message": f"Schedule {doc.name} created."}
 
 

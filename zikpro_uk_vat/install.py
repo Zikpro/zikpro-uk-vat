@@ -228,7 +228,7 @@ def ensure_vat_roles_and_perms():
 				changed = True
 		if changed:
 			frappe.clear_cache(doctype=doctype)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- install/migrate hook (and DDL outside the open transaction): Frappe does not auto-commit install steps; later hooks must see the change
 
 
 def ensure_custom_fields():
@@ -244,7 +244,7 @@ def ensure_custom_fields():
 			if not frappe.db.has_column(doctype, f["fieldname"])
 		]
 		if missing:
-			frappe.db.commit()  # DDL must not run inside the open transaction
+			frappe.db.commit()  # DDL must not run inside the open transaction  # nosemgrep: frappe-manual-commit -- install/migrate hook (and DDL outside the open transaction): Frappe does not auto-commit install steps; later hooks must see the change
 			frappe.db.updatedb(doctype)
 			frappe.logger().info(
 				f"UK VAT: rebuilt schema for {doctype}, missing columns {missing}"
@@ -265,7 +265,7 @@ def enforce_uk_timezone():
 	"""
 	if frappe.db.get_single_value("System Settings", "time_zone") != "Europe/London":
 		frappe.db.set_single_value("System Settings", "time_zone", "Europe/London")
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit -- install/migrate hook (and DDL outside the open transaction): Frappe does not auto-commit install steps; later hooks must see the change
 		frappe.logger().info("UK VAT: set System Settings.time_zone = Europe/London")
 
 
@@ -319,7 +319,7 @@ def resync_standard_ui_records():
 			frappe.reload_doc("zikpro_uk_vat", dt, dn, force=True)
 		except Exception:
 			frappe.log_error(f"UK VAT: resync {dt}/{dn} failed", "uk_vat_resync")
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- install/migrate hook (and DDL outside the open transaction): Frappe does not auto-commit install steps; later hooks must see the change
 
 
 def ensure_vat_setup():
